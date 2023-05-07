@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    #'rest_framework_swagger',
     'places',
     'products',
     'graphene_django',
@@ -139,4 +141,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 GRAPHENE = {
     "SCHEMA": "places.schema.schema"
     #"SCHEMA": "backend.schema.schema"
+}
+
+#REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
 }

@@ -8,6 +8,8 @@ import PlacesList from "../components/placesLists";
 import styled from "styled-components";
 import Modal from "../components/modal";
 
+
+
 const maplibregl = require("maplibre-gl/dist/maplibre-gl.js");
 
 export default function Home() {
@@ -17,13 +19,32 @@ export default function Home() {
   const [Map, setMap] = useState();
   const { data, error } = useSWR("/api/liveMusic", fetcher);
 
+  const [places, setPlaces] = useState([]);
+  const [viewport, setViewport] = useState({
+    width: '100%',
+    height: '100%',
+    latitude: 0,
+    longitude: 0,
+    zoom: 10,
+  });
+
+  const[converted_places, setConvertedPlaces] = useState(
+    {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    }
+  );
+
   if (error) {
     console.error(error);
   }
 
   useEffect(() => {
     setPageIsMounted(true);
-
+    
     let map = new maplibregl.Map({
       container: 'my-map',
       // Use a minimalist raster style
@@ -69,64 +90,65 @@ export default function Home() {
     
 map.on('load', function () {
   // Add an image to use as a custom marker
-  map.loadImage(
-  'https://maplibre.org/maplibre-gl-js-docs/assets/custom_marker.png',
-  function (error, image) {
-  if (error) throw error;
-  map.addImage('custom-marker', image);
-  // Add a GeoJSON source with 3 points.
-  map.addSource('points', {
-  'type': 'geojson',
-  'data': {
-  'type': 'FeatureCollection',
-  'features': [
-  {
-  'type': 'Feature',
-  'properties': {},
-  'geometry': {
-  'type': 'Point',
-  'coordinates': [
-  -91.395263671875,
-  -0.9145729757782163
-  ]
-  }
-  },
-  {
-  'type': 'Feature',
-  'properties': {},
-  'geometry': {
-  'type': 'Point',
-  'coordinates': [
-  -90.32958984375,
-  -0.6344474832838974
-  ]
-  }
-  },
-  {
-  'type': 'Feature',
-  'properties': {},
-  'geometry': {
-  'type': 'Point',
-  'coordinates': [
-  -91.34033203125,
-  0.01647949196029245
-  ]
-  }
-  }
-  ]
-  }
-  });
+  map.loadImage('https://maplibre.org/maplibre-gl-js-docs/assets/custom_marker.png',
+      function (error, image) {
+          if (error) throw error;
+          map.addImage('custom-marker', image);
+
+          // Add a GeoJSON source with 3 points.
+          map.addSource('points', 
+              {
+              'type': 'geojson',
+              'data': {
+                'type': 'FeatureCollection',
+                'features': [
+                      {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                          'type': 'Point',
+                          'coordinates': [-91.395263671875,-0.9145729757782163]
+                        }
+                      },
+                      {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                        'type': 'Point',
+                        'coordinates': [
+                        -90.32958984375,
+                        -0.6344474832838974
+                        ]
+                        }
+                      },
+                      {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                        'type': 'Point',
+                        'coordinates': [
+                        -91.34033203125,
+                        0.01647949196029245
+                        ]
+                        }
+                      }
+                    ]
+                  }
+              }
+          );
    
-  // Add a symbol layer
-  map.addLayer({
-  'id': 'symbols',
-  'type': 'symbol',
-  'source': 'points',
-  'layout': {
-      'icon-image': 'custom-marker'
-    }
-  });
-  }
+          // Add a symbol layer
+          map.addLayer(
+            {
+              'id': 'symbols',
+              'type': 'symbol',
+              'source': 'points',
+              'layout': {
+                  'icon-image': 'custom-marker'
+                }
+            }
+          );
+      }
   );
    
     // Center the map on the coordinates of any clicked symbol from the 'symbols' layer.
@@ -145,9 +167,34 @@ map.on('load', function () {
     map.on('mouseleave', 'symbols', function () {
       map.getCanvas().style.cursor = '';
     });
-  });
+ } //map on load function
+);
     
   }, []);
+
+  useEffect(() => {
+    // Fetch places data from the database
+    const fetchPlaces = async () => {
+      try {
+        const response = await fetch('/api/places'); // Replace with your API endpoint
+        const data = await response.json();
+        setPlaces(data);
+      } catch (error) {
+        console.error('Error fetching places:', error);
+      }
+    };
+
+    fetchPlaces();
+    console.log(JSON.stringify(data))
+    
+    if (pageIsMounted && data) {
+     
+      Map.on("load", function () {
+        addDataLayer(Map, data);
+      });
+    }
+  }, [pageIsMounted, setMap, data, Map]);
+
 
   
   useEffect(() => {
@@ -171,27 +218,31 @@ map.on('load', function () {
       <MapContainer id="my-map" />
 
       <div id="modal-root"></div>
-      
+
       {/* <Overlay>
         <PlacesList />
        </Overlay> */}
-
+      
         <div>
             <button onClick={() => setShowModal(true)}>Open Modal</button>
             {showModal && <Modal
                 onClose={() => setShowModal(false)}
                 show={showModal}
             >
-                Hello from the modal!
+               <form action="/api/form" method="post">
+                <label htmlFor="first">First name:</label>
+                <input type="text" id="first" name="first" />
+                <label htmlFor="last">Last name:</label>
+                <input type="text" id="last" name="last" />
+                <button type="submit">Submit</button>
+              </form>
             </Modal>}
         </div>
-      
     </Container>
     
 
   );
 }
-
 
 const Container = styled.div`
   height: 100vh;
@@ -203,7 +254,7 @@ const MapContainer = styled.div`
   top: 0; 
   bottom: 0; 
   width: 100%;
-  z-index: -10;
+  //z-index: -10;
 `
 
 const Overlay = styled.div`
