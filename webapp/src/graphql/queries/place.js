@@ -32,3 +32,23 @@ export const ALL_PLACES_QUERY = gql`
     }
 }
 `;
+
+export const ADD_PLACE_QUERY = gql`
+  mutation CreateRequest($input: RequestInput!) {
+  createRequest(input: $input) {
+    request {
+      id
+      name
+      description
+    }
+  }
+}
+
+{
+  "input": {
+    "name": "NightStar1",
+    "description": "open all night",
+    "address": "1 Baile Na Gleanna, Inisheer, Co. Galway, Ireland"
+  }
+}
+`;
