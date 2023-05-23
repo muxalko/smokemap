@@ -16,6 +16,11 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# set gdal library path for django to find it
+from glob import glob
+
+GDAL_LIBRARY_PATH=glob('/usr/lib/libgdal.so.*')[0]
+GEOS_LIBRARY_PATH=glob('/usr/lib/libgeos_c.so.*')[0]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -43,6 +48,10 @@ INSTALLED_APPS = [
     'places',
     'products',
     'graphene_django',
+    # https://github.com/makinacorpus/django-geojson#django-geojson
+    'djgeojson', # (not required for views)
+    # https://stackoverflow.com/questions/25220540/django-templatedoesnotexist-gis-admin-openlayers-html
+    'django.contrib.gis',
 ]
 
 MIDDLEWARE = [
@@ -81,7 +90,10 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        # https://stackoverflow.com/questions/12538510/getting-databaseoperations-object-has-no-attribute-geo-db-type-error-when-do
+        # This engine fails with: AttributeError: 'DatabaseOperations' object has no attribute 'geo_db_type'
+        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
