@@ -1,8 +1,15 @@
 from django.db import models
 from geopy.geocoders import Nominatim
 from django.core.exceptions import ValidationError
+from django.contrib.gis.db import models
+
+
 
 # Create your models here.
+class Place(models.Model):
+    name = models.CharField(max_length=255)
+    location = models.PointField()
+    
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, null=True)
@@ -48,7 +55,7 @@ class Address(models.Model):
     
     def __str__(self):
         return "{} ({},{})".format(self.address,self.lat,self.long)
-    
+
 class Request(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()

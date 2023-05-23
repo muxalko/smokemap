@@ -1,54 +1,29 @@
-import { gql, useQuery } from "@apollo/client";
+import { gql} from "@apollo/client";
 
 export const ALL_PLACES_QUERY = gql`
-  query {
-    requests {
-      id
-      name
-      address {
+query {
+      places {
         id
-        address
-        lat
-        long
-      }
-      description
-      imageurl
-      dateCreated
-      dateApproved
-      approved
-      category {
-        id
-        name
-      }
-      tags {
-        id
-        name
-        category{
-          id
+        type
+        geometry {
+          type
+          coordinates
+        }
+        bbox
+        properties {
           name
         }
-      }
-      __typename
-    }
+  }
 }
 `;
 
 export const ADD_PLACE_QUERY = gql`
-  mutation CreateRequest($input: RequestInput!) {
-  createRequest(input: $input) {
-    request {
-      id
-      name
-      description
+  mutation CreatePlace($name: String!, $location: Geometry!) {
+    createPlace(name: $name, location: $location) {
+      place {
+        id
+      }
     }
   }
-}
-
-{
-  "input": {
-    "name": "NightStar1",
-    "description": "open all night",
-    "address": "1 Baile Na Gleanna, Inisheer, Co. Galway, Ireland"
-  }
-}
 `;
+

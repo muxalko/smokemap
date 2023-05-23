@@ -1,7 +1,13 @@
 import graphene
 from graphene_django import DjangoObjectType
-from .models import Category, Tag, Request, Address
+from .models import Category, Tag, Request, Address, Place
 from django.core.exceptions import ValidationError
+import graphql_geojson
+
+class PlaceType(graphql_geojson.GeoJSONType):
+    class Meta:
+        model = Place
+        geojson_field = 'location'
 
 class CategoryType(DjangoObjectType):
     class Meta: 
@@ -44,6 +50,7 @@ class Query(graphene.ObjectType):
     #tags = graphene.List(TagType)
     #addresses = graphene.List(AddressType)
     requests = graphene.List(RequestType)
+    places = graphene.List(PlaceType)
 
     def resolve_categories(root, info, **kwargs):
         # Querying a list
@@ -60,8 +67,23 @@ class Query(graphene.ObjectType):
     def resolve_requests(root, info, **kwargs):
         # Querying a list
         return Request.objects.all()
+    
+    def resolve_places(root, info, **kwargs):
+        # Querying a list
+        return Place.objects.all()
 
+class CreatePlace(graphene.Mutation):
+    place = graphene.Field(PlaceType)
 
+    class Arguments:
+        name = graphene.String(required=True)
+        location = graphql_geojson.Geometry(required=True)
+
+    @classmethod
+    def mutate(cls, root, info, **args):
+        place = Place.objects.create(**args)
+        return cls(place=place)
+                   
 class UpdateCategory(graphene.Mutation):
     class Arguments:
         # Mutation to update a category 
