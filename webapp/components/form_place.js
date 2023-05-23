@@ -203,7 +203,7 @@ export function CreateRequest() {
        <h3>Add a Place</h3>
        {submission_result && (
         <div>
-          Success! Place created with ID: {submission_result.id}, Name: {submission_result.name}, Address: {submission_result.address.address} ({submission_result.address.lat},{submission_result.address.long})
+          Success! Place created with ID: {submission_result.id}, Name: {submission_result.name}, Address: {submission_result.address.address} {submission_result.address.lat},{submission_result.address.long}
         </div>
       )}
       {submission_error ? <p>Oh no! {submission_error.message}</p> : null}
