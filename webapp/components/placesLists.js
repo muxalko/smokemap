@@ -1,30 +1,30 @@
 import { gql, useQuery } from "@apollo/client";
 import { ALL_PLACES_QUERY } from "../src/graphql/queries/place";
+import { useEffect } from "react";
 
-// export const ALL_PLACES_QUERY = gql`
-//   query {
-//     books {
-//       id
-//       title
-//       isbn
-//     }
-//   }
-// `;
+function PlacesList({onClickHandler}) {
+  
+  useEffect(() => {
+    console.log("Component render: PlacesList");
+  });
 
-function PlacesList() {
   const { loading, error, data } = useQuery(ALL_PLACES_QUERY);
 
   if (error) return <div>Error loading Places.</div>;
   if (loading) return <div>Loading</div>;
 
-  const { requests } = data;
+  const { places } = data;
 
-  console.log("requests", requests)
-
-  var placeslist = requests.map(function(place){
-    return <li key={place.id}>{place.id}.{place.name} - {place.address.address}</li>
+  var placeslist = places.map(function(place){
+    return (
+      <li key={place.id}>
+          <div>
+            <p>{place.id}.{place.properties.name})</p>
+            <button onClick={() => {onClickHandler(place.geometry.coordinates)}}>FlyTo</button>
+          </div>
+        </li>
+    )
   })
-
 
   return <ul>{placeslist}</ul>;
 }

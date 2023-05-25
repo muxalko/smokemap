@@ -7,9 +7,9 @@ from django.contrib.gis.db import models
 
 # Create your models here.
 class Place(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(unique=True, max_length=255)
     location = models.PointField()
-    
+
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, null=True)
@@ -61,9 +61,13 @@ class Request(models.Model):
     description = models.TextField()
     address = models.ForeignKey(Address, on_delete=models.PROTECT)
     # imageurl = models.URLField(blank=True)
-    date_created = models.DateField(auto_now_add=True)
-    # date_approved = models.DateField(blank=True, null=True)
-    # approved = models.BooleanField(default=False)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    date_approved = models.DateTimeField(blank=True, null=True)
+    approved = models.BooleanField(auto_created=True, default=False)
+    approved_comment = models.TextField(blank=True, null=True)
+    approved_by = models.CharField(auto_created=True, blank=True, null=True, max_length=100)
+
     # the item belongs to one category 
     # if having a category is required please remove blank=True
     # category = models.ForeignKey(Category, blank=True) 

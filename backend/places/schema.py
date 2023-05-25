@@ -3,6 +3,8 @@ from graphene_django import DjangoObjectType
 from .models import Category, Tag, Request, Address, Place
 from django.core.exceptions import ValidationError
 import graphql_geojson
+from django.utils import timezone
+from django.contrib.gis import geos
 
 class PlaceType(graphql_geojson.GeoJSONType):
     class Meta:
@@ -36,11 +38,14 @@ class RequestType(DjangoObjectType):
             'id',
             'name',
             'description',
-            'address'
+            'address',
             # 'imageurl',
-            # 'date_created', 
-            # 'date_approved',
-            # 'approved', 
+            'date_created',
+            'date_updated',
+            'date_approved',
+            'approved',
+            'approved_by',
+            'approved_comment',
             # 'category',
            # 'tags'
         )  
@@ -50,7 +55,18 @@ class Query(graphene.ObjectType):
     #tags = graphene.List(TagType)
     #addresses = graphene.List(AddressType)
     requests = graphene.List(RequestType)
+    requests_to_approve = graphene.List(RequestType)
+    requests_by_id = graphene.Field(
+        RequestType,
+        id=graphene.ID()
+    )
+    requests_by_name = graphene.Field(
+        RequestType,
+        name=graphene.String()
+    )
+
     places = graphene.List(PlaceType)
+
 
     def resolve_categories(root, info, **kwargs):
         # Querying a list
@@ -67,6 +83,18 @@ class Query(graphene.ObjectType):
     def resolve_requests(root, info, **kwargs):
         # Querying a list
         return Request.objects.all()
+    
+    def resolve_requests_to_approve(root, info, **kwargs):
+        # Querying a list
+        return Request.objects.filter(approved=False)
+    
+    def resolve_requests_by_id(root, info, id):
+        # Querying a request
+        return Request.objects.get(pk=id)
+    
+    def resolve_requests_by_name(root, info, name):
+        # Querying a named
+        return Request.objects.filter(name=name)
     
     def resolve_places(root, info, **kwargs):
         # Querying a list
@@ -151,7 +179,8 @@ class CreateRequest(graphene.Mutation):
         request.address = myaddress
         #request.imageurl = input.imageurl
         #request.date_created = input.date_created
-        #request.date_approved = input.date_approved
+        #request.date_updated = null
+        #request.date_approved = null
         #request.approved = input.approved
         #request.category = category
         #request.tags = [tag, tag, tag]
@@ -173,19 +202,55 @@ class UpdateRequest(graphene.Mutation):
         request.description = input.description
         request.address = input.address
         # request.imageurl = input.imageurl
-        # request.date_created = input.date_created
-        # request.date_approved = input.date_approved
-        # request.approved = input.approved
+        request.date_created = input.date_created
+        request.date_approved = input.date_approved
+        request.approved = input.approved
         # request.category = input.category
         #request.tags = input.tags
 
         request.save()
         return UpdateRequest(request=request)
 
+class RequestApproveInput(graphene.InputObjectType):
+    approved_comment = graphene.String() 
+    approved_by = graphene.String()
+    approved = graphene.Boolean()
+
+
+class ApproveRequest(graphene.Mutation):
+
+    class Arguments:
+        input = RequestApproveInput(required=True)
+        id = graphene.ID()
+
+    request = graphene.Field(RequestType)
+    
+    @classmethod
+    def mutate(cls, root, info, input, id):
+        request = Request.objects.get(pk=id)
+
+        if request.approved:
+            raise ValidationError(
+            ('The request has already been approved.'),
+            params={'approved_by': request.approved_by},
+            )
+
+        request.date_approved = timezone.now()
+        request.approved = True
+
+        newPlace = Place()
+        newPlace.name = request.name
+        newPlace.location = geos.Point((request.address.long, request.address.lat))
+        newPlace.save()
+
+        request.save()
+        return ApproveRequest(request=request)
+
 class Mutation(graphene.ObjectType):
     update_category = UpdateCategory.Field()
     create_category = CreateCategory.Field()
     create_request = CreateRequest.Field()
     update_request = UpdateRequest.Field()
+    approve_request = ApproveRequest.Field()
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
