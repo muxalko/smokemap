@@ -3,20 +3,63 @@ version: '3'
 services:
   db:
     container_name: smokemap_pgdb
+    hostname: smokemap_pgdb
     restart: always
-    #image: postgres:13-alpine
     image: postgis/postgis:13-3.3-alpine
     environment: 
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_HOST=db
+      POSTGRES_DB: ${pg_database}
+      POSTGRES_USER: ${pg_user}
+      POSTGRES_PASSWORD: ${pg_password}
+      POSTGRES_HOST: ${pg_host}
+      POSTGRES_PORT: ${pg_port}
     networks:
       - core
     ports:
       - 5432:5432
     volumes:
+      - ./data:/work
       - ./backend/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+  
+  pg_client:
+    environment:
+      PGDATABASE: ${pg_database}
+      PGHOST: ${pg_host}
+      PGPORT: ${pg_port}
+      PGUSER: ${pg_user}
+      PGPASSWORD: ${pg_password}
+    build:
+      context: ./data/psqlclient/
+    networks:
+      - core
+    volumes:
+      - ./data:/work
+
+  pg_admin:
+    container_name: pg_admin
+    hostname: pg_admin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${pg_admin_email}
+      - PGADMIN_DEFAULT_PASSWORD=${pg_admin_password}
+      - PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=${pg_admin_enhanced_cookie_protection}
+      - PGADMIN_CONFIG_LOGIN_BANNER="${pg_admin_login_banner}"
+      - PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=${pg_admin_console_log_level}
+    restart: always
+    networks:
+      - core
+
+  pg_tileserv:
+    image: pramsey/pg_tileserv:latest
+    container_name: pg_tileserv
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@smokemap_pgdb/postgres
+    networks:
+      - core
+    depends_on:
+      - db
+    ports:
+      - 7800:7800
+
   backend:
     container_name: smokemap_backend
     build:
@@ -35,6 +78,7 @@ services:
       - core
     links:
       - db:db
+
   webapp:
     container_name: smokemap_webapp
     build:
@@ -52,6 +96,7 @@ services:
       - 3000:3000
     links:
       - backend:backend
+
   nginx:
     container_name: smokemap_nginx
     image: nginx

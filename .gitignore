@@ -34,3 +34,4 @@ webapp/.env.test.local
 .vercel
 
 backend/**/__pycache__
+.env

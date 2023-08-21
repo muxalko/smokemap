@@ -1,6 +1,8 @@
 module.exports = {
   reactStrictMode: true,
-  // compiler: {
+  compiler: {
+    // ssr and displayName are configured by default
+   styledComponents: true,
   //   // see https://styled-components.com/docs/tooling#babel-plugin for more info on the options.
   //   styledComponents: boolean | {
   //       // Enabled by default in development, disabled in production to reduce file size,
@@ -25,5 +27,5 @@ module.exports = {
   //       // Not supported yet.
   //       pure?: boolean,
   //     },
-  // },
+  },
 }
