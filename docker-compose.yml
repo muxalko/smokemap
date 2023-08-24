@@ -48,9 +48,25 @@ services:
     networks:
       - core
 
+  pg_featureserv:
+    image: pramsey/pg_featureserv:latest
+    container_name: pg_featureserv
+    restart: always
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@smokemap_pgdb/postgres
+    networks:
+      - core
+    depends_on:
+      - db
+    ports:
+      - 9000:9000
+    volumes:
+      - ./config/pg_featureserv.toml:/config/pg_featureserv.toml
+
   pg_tileserv:
     image: pramsey/pg_tileserv:latest
     container_name: pg_tileserv
+    restart: always
     environment:
       - DATABASE_URL=postgres://postgres:postgres@smokemap_pgdb/postgres
     networks:
@@ -68,6 +84,7 @@ services:
     command: 
       # ["python", "manage.py", "runserver", "0.0.0.0:8000"]
       ["gunicorn", "--bind", ":8000", "backend.wsgi:application"]
+    restart: always
     volumes:
       - ./backend:/app/backend
       - /var/run/docker.sock:/var/run/docker.sock
@@ -84,6 +101,7 @@ services:
     build:
       context: webapp
       dockerfile: Dockerfile
+    restart: always
     networks:
       - core
     command:
@@ -103,6 +121,7 @@ services:
     build:
       context: nginx
       dockerfile: Dockerfile
+    restart: always
     volumes:
       - static:/app/backend/static
     ports:
