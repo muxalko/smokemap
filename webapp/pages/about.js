@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { ThemeContext } from './ThemeContext';
 import { themes } from './ThemeContext';
-import { PlaceForm, CreateRequest } from '../components/form_place';
+import { CreateRequest } from '../components/form_place';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { ListCategory, AddCategory } from '../components/category'
 import PlacesList from '../components/placesLists';
-import RequestsList from '../components/requestsList';
+import ListOfThings from '../components/listOfThings';
 import Map from '../components/map';
 import styled from "styled-components";
 
 const initialFlyTo = [52.51965492668956, 13.406841854355584]
 
 export default function About() {
-
-  const [refresh, setRefresh] = useState(false);
   
   const [flyTo, setFlyTo] = useState(initialFlyTo)
 
@@ -35,13 +33,11 @@ export default function About() {
           <Map flyTo={flyTo}/>
         </MapContainer>
         <ControlContainer>
-            {/* Your form inputs using the TextInput and SelectInput components */}
             <ErrorBoundary>
               <h3>Add a new place</h3>
               <CreateRequest onSuccessfulCreation={setFlyTo} />
             </ErrorBoundary>
-          <h4>Requests</h4>
-          <RequestsList doRefresh={refresh} setRefresh={() => setRefresh()}/> 
+         <ListOfThings />
           <h4>Places</h4> 
           <PlacesList onClickHandler={setFlyTo}/>
  

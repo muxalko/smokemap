@@ -6,6 +6,7 @@ const MAPBOX_ACCESS_TOKEN = 'YOUR_MAPBOX_ACCESS_TOKEN';
 const GRAPHQL_ENDPOINT = 'YOUR_GRAPHQL_ENDPOINT';
 const pointsLayerId = 'points';
 
+// represents a map class
 const Map = () => {
   
   const mapInstanceRef = useRef(null);

@@ -39,15 +39,6 @@ export default function Home() {
   });
 
 
-  // const[converted_places, setConvertedPlaces] = useState(
-  //   {
-  //     type: 'geojson',
-  //     data: {
-  //       type: 'FeatureCollection',
-  //       features: []
-  //     }
-  //   }
-  // );
 
   //const { loading, error, pointsData } = useLazyQuery(ALL_PLACES_QUERY);
   //const { data: pointsData, isLoading } = useQuery(pointsLayerId, async () => {
