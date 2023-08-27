@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { CreateRequest } from '../components/form_place';
 import ErrorBoundary from '../components/ErrorBoundary';
 import PlacesList from '../components/placesLists';
-import MapComponent from '../components/MapComponent';
+import Map from '../components/map';
 import styled from "styled-components";
 
 const initialFlyTo = [52.51965492668956, 13.406841854355584]
@@ -26,7 +26,7 @@ export default function Index() {
           <Header>Smokemap v0.1</Header>
         </Navbar>
         <MapContainer>
-          <MapComponent flyTo={flyTo}/>
+          <Map flyTo={flyTo}/>
         </MapContainer>
         <ControlContainer>
             <ErrorBoundary>

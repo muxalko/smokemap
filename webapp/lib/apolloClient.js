@@ -9,7 +9,7 @@ function createApolloClient() {
         //ssrMode: typeof window === 'undefined', // set to true for SSR
         ssrMode: typeof window === true,
         link: new HttpLink({
-            uri: 'http://192.168.56.5/private/graphql/',
+            uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT
         }),
         cache: new InMemoryCache(),
     });

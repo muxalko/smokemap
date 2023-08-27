@@ -15,7 +15,7 @@ import {clusterLayer, clusterCountLayer, unclusteredPointLayer} from './layers';
 const lon = -123.11343223112543;
 const lat = 49.28339038044595;
 
-export default function App() {
+export default function MapComponent() {
     const mapRef = useRef();
     const map = mapRef.current
 

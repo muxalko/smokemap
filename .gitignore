@@ -35,3 +35,8 @@ webapp/.env.test.local
 
 backend/**/__pycache__
 .env
+*.zip
+*.dbf
+*.prj
+*.shp
+*.shx
