@@ -4,12 +4,12 @@ import {useState, useRef, useCallback} from 'react';
 
 import Map, {Source, Layer, AttributionControl, FullscreenControl} from 'react-map-gl/maplibre';
 
-import ControlPanel from './control-panel_cities';
+import ControlPanel from './../components/control-panel_cities';
 // TODO: investigate error when installing canvas - neeeded for SVG type of images
 //import MarkerIconSvg from "./../src/assets/icon-marker.svg";
 //import { Image } from "canvas";
 
-import {clusterLayer, clusterCountLayer, unclusteredPointLayer} from './layers';
+import {clusterLayer, clusterCountLayer, unclusteredPointLayer} from './../components/layers';
 
 //vacouver start
 const lon = -123.11343223112543;
