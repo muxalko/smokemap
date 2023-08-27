@@ -31,7 +31,7 @@ SECRET_KEY = 'h)0*!!bdzs6gqtovw#!$0h66xz-)5-_9sn8jd(r$$&^ht*^@ym'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.56.5']
+ALLOWED_HOSTS = ['192.168.56.5','.vercel.app']
 
 
 # Application definition
@@ -82,7 +82,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'backend.wsgi.app'
 
 
 # Database

@@ -38,8 +38,8 @@ urlpatterns = [
     #   * `title` and `description` parameters are passed to `SchemaGenerator`.
     #   * Provide view name for use with `reverse()`.
     path('openapi', get_schema_view(
-        title="Your Project",
-        description="API for all things …"
+        title="Smokemap API",
+        description="API for Smokemap project …"
     ), name='openapi-schema'),
     #
     path('admin/', admin.site.urls),
