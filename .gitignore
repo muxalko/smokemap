@@ -40,3 +40,5 @@ backend/**/__pycache__
 *.prj
 *.shp
 *.shx
+webapp/devel.env
+.env
