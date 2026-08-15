@@ -1,36 +1,18 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Local configuration and secrets
+.env
+*.env
+!.env.example
 
-# dependencies
-webapp/node_modules
-webapp/.pnp
-.pnp.js
+# Local runtimes and generated state
+venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/
 
-# testing
-webapp/coverage
-
-# next.js
-webapp/.next/
-webapp/out/
-
-# production
-webapp/build
-
-# misc
-webapp/.DS_Store
-*.pem
-
-# debug
-webapp/npm-debug.log*
-webapp/yarn-debug.log*
-webapp/yarn-error.log*
-
-# local env files
-webapp/.env.local
-webapp/.env.development.local
-webapp/.env.test.local
-.env.production.local
-
-# vercel
-.vercel
-
-backend/**/__pycache__
+# Local diagnostics and archives
+django_request_context.json
+/logs/
+*.log
+*.tar
+*.tar.gz

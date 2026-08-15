@@ -1,0 +1,8 @@
+[submodule "smokemap-webapp"]
+	path = smokemap-webapp
+	url = https://github.com/muxalko/smokemap-webapp.git
+	branch = development
+[submodule "smokemap-django-backend"]
+	path = smokemap-django-backend
+	url = https://github.com/muxalko/smokemap-django-backend.git
+	branch = development
