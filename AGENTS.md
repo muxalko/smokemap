@@ -185,6 +185,30 @@ When a sandbox cannot access host-published ports, test from inside the relevant
 
 Use a lightweight issue → branch → commit → pull request → squash-merge workflow in the superproject and each application repository. Superproject changes are limited to orchestration, shared documentation and tested submodule pointers; application code remains in its owning repository.
 
+### GitHub automation identity
+
+All issue, project, review and pull-request mutations performed by Codex must
+authenticate as the GitHub App `muxalko-smokemap-codex` by using
+`scripts/github-app-gh`. The helper uses GitHub App ID `4606700` and reads its
+private key from
+`~/workspace/.config/smokemap/muxalko-smokemap-codex.2026-08-15.private-key.pem`.
+
+- Never print, copy, commit or log the private key, a signed App JWT or an
+  installation access token.
+- Never use the interactive user's `gh` authentication for GitHub mutations.
+- Do not fall back to a user identity when App authentication is unavailable;
+  stop and request assistance.
+- Before a mutation, the helper must verify the installation belongs to
+  `muxalko` and its App slug is `muxalko-smokemap-codex`.
+- After creating a pull request, the helper must verify that its author is
+  `muxalko-smokemap-codex[bot]`.
+- Local Git remains the supported path for branch, commit and push operations.
+  GitHub issues and pull requests use the App helper.
+
+The private key remains outside every repository and must have mode `0600`.
+The App ID, owner, slug and key path can be overridden with the non-secret
+configuration variables documented by `scripts/github-app-gh --help`.
+
 1. Read this file, both repository statuses, relevant documentation and nearby code before editing.
 2. Select or create one small GitHub issue with an observable acceptance
    criterion. When a shared Smokemap Project exists, add the issue and move it
@@ -227,7 +251,7 @@ git switch -c issue-<number>-<short-slug>
 git add <paths>
 git commit -m "Concise imperative change (#<number>)"
 git push -u origin issue-<number>-<short-slug>
-gh pr create --base development --title "Concise outcome" --body "Closes #<number>"
+scripts/github-app-gh pr create --base development --title "Concise outcome" --body "Closes #<number>"
 gh pr merge --squash --delete-branch
 ```
 
@@ -235,7 +259,12 @@ Do not install host dependencies, run production migrations, contact external st
 
 ## Troubleshooting
 
-- Codex app GitHub authentication: inside the Codex sandbox, `gh auth status` can report an `invalid` token even after successful authentication because the sandbox cannot access the host keychain or injected token environment (see [openai/codex#10695](https://github.com/openai/codex/issues/10695)). Treat this as a sandbox false negative only when an authenticated GitHub connector request succeeds and the repository's normal Git remote operation also authenticates. In that case, do not repeatedly ask the user to log in and never print or copy tokens; use local Git for branch/commit/push and the connected GitHub tools for issues and pull requests. If both the connector and Git remote authentication fail, stop and request reauthentication.
+- GitHub App authentication: use `scripts/github-app-gh --check` to diagnose
+  App access without displaying credentials. Do not use `gh auth status` as a
+  substitute because it reports the interactive user identity, which must not
+  author Codex issues or pull requests. Use local Git for branch, commit and
+  push, and the App helper for GitHub mutations. If either path fails, stop and
+  request assistance without printing or copying tokens.
 - `ENOSPC` during Docker builds: check both `df -h / /data` and `docker system df`. Do not prune unrelated images, volumes or caches without approval.
 - Backend waits indefinitely: inspect `docker compose logs backend db` and call `/health/ready/` from the backend container.
 - Frontend waits indefinitely: inspect `docker compose logs frontend`; the first request may trigger a development compilation.
