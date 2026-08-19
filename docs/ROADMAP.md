@@ -274,20 +274,20 @@ M1 is done only when:
 
 ## 9. Non-blocking backlog hygiene
 
-Perform after this planning synchronization is approved and merged:
+Completed on 2026-08-19 under root issue `#13`:
 
-1. Close stale backend Dependabot PRs `#30`, `#38`, `#40`, `#41`, `#46`, and
-   `#47` with an explanation that dependency work will be regenerated against
-   the current M5 baseline.
-2. Verify obsolete remote branches before deletion. The backend
-   `13-secure-django-endpoints` branch currently has no commits unique from
-   `development`; do not delete branches with unique history.
-3. Preserve the intentionally independent frontend `development`, `staging`,
-   and `main` clean-root trees.
-4. Preserve backend history and reconcile deployment branches only through a
-   deliberate promotion plan.
+1. Stale backend Dependabot PRs `#30`, `#38`, `#40`, `#41`, `#46`, and `#47`
+   were closed without merging and with an M5 regeneration explanation.
+2. Backend branch `13-secure-django-endpoints` was re-verified at 116 commits
+   behind `development` with zero unique commits and was deleted.
+3. Backend `muxalko-patch-1` was preserved because it has one unique commit;
+   backend `development`, `main`, and `staging` were also preserved.
+4. The intentionally independent frontend `development`, `staging`, and
+   `main` clean-root trees were preserved.
+5. Backend deployment-branch reconciliation remains deferred to the deliberate
+   M5 promotion plan.
 
-This hygiene must not delay the M1 security blockers.
+No remaining item in this hygiene list delays the M1 security blockers.
 
 ## 10. Progress log
 
@@ -297,4 +297,5 @@ This hygiene must not delay the M1 security blockers.
 | 2026-08-10 | Local engineering baseline | Established | `LOCAL_CHECKPOINT.md` |
 | 2026-08-16 | Credential/history cleanup | Completed | Clean supported histories, revoked credentials, redacted scans |
 | 2026-08-19 | Pre-milestone audit | Completed | `PRE_MILESTONE_AUDIT.md` |
+| 2026-08-19 | Non-blocking backlog hygiene | Completed | Root issue `#13`; six stale backend dependency PRs closed; zero-unique-commit branch retired |
 | 2026-08-19 | M1 | Set to Current | Canonical M1–M5 plan synchronized with GitHub |
