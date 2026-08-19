@@ -21,4 +21,11 @@ For an existing clone, use `make sync` to restore the revisions recorded by the 
 
 Application changes follow their own issue, branch and pull-request workflow. After an application PR is merged and verified, update the corresponding submodule pointer in a separate root pull request.
 
-See [AGENTS.md](AGENTS.md) for the complete development, security and verification rules.
+Planning and evidence:
+
+- [Pre-milestone audit](docs/PRE_MILESTONE_AUDIT.md)
+- [Execution roadmap](docs/ROADMAP.md)
+- [Historical architecture assessment](docs/ARCHITECTURE_ASSESSMENT.md)
+
+See [AGENTS.md](AGENTS.md) for the complete development, security and
+verification rules.

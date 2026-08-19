@@ -1,6 +1,6 @@
 # Smokemap Joint Architecture and Engineering Assessment
 
-Status: Completed assessment
+Status: Completed historical assessment
 
 Assessment date: 2026-08-10
 
@@ -9,6 +9,15 @@ Scope: `smokemap-webapp` and `smokemap-django-backend`
 Method: Read-only source, configuration, repository, and static-analysis review
 
 Execution plan: [Smokemap Execution Roadmap](ROADMAP.md)
+
+Current-state note (2026-08-19): this assessment records the evidence observed
+on 2026-08-10. Credential/history cleanup, repository governance, the complete
+Compose baseline, health endpoints, same-origin browser proxies, deterministic
+local data, map fixes, and additional tests have since landed. The unresolved
+authorization, token exposure, upload, moderation, submission, viewport, and
+search findings remain planning inputs. See the
+[pre-milestone audit](PRE_MILESTONE_AUDIT.md) for the reconciled current state
+and `ROADMAP.md` for the canonical M1–M5 execution sequence.
 
 ## 1. Executive conclusion
 

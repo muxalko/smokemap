@@ -1,5 +1,13 @@
 # Local development checkpoint
 
+Status: Historical recovery checkpoint
+
+Current-state note (2026-08-19): the workspace `development` branch and its
+submodule pointers supersede this checkpoint as the active integration
+baseline. Keep these tags as recovery evidence; do not reset current work to
+them. See [the pre-milestone audit](PRE_MILESTONE_AUDIT.md) and
+[the execution roadmap](ROADMAP.md).
+
 The working local-development baseline was recorded on 2026-08-10 after the complete stack, map, provisional categories and same-origin API proxy were verified.
 
 ## Application revisions
