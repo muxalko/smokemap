@@ -25,6 +25,7 @@ Planning and evidence:
 
 - [Pre-milestone audit](docs/PRE_MILESTONE_AUDIT.md)
 - [Execution roadmap](docs/ROADMAP.md)
+- [M1 security and authorization contract](docs/M1_SECURITY_POLICY.md)
 - [Historical architecture assessment](docs/ARCHITECTURE_ASSESSMENT.md)
 
 See [AGENTS.md](AGENTS.md) for the complete development, security and

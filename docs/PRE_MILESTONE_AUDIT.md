@@ -153,19 +153,21 @@ documenting promotion behavior.
 8. Add reliable CI gates, including redacted secret scanning.
 9. Demonstrate every M1 exit criterion before beginning M2.
 
-## 8. Decisions intentionally deferred until this plan merges
+## 8. M1 decisions resolved after this audit
 
-The next planning activity will approve or explicitly defer:
+The [M1 security and authorization contract](M1_SECURITY_POLICY.md) resolves:
 
-- guest submission policy and ownership;
+- guest submission policy and authenticated ownership;
 - the guest/user/moderator/administrator permission matrix;
 - moderator versus administrator powers;
 - token transport, rotation, reuse, revocation, and lifetime;
 - logout and terminal refresh-failure semantics;
 - minimum audit and privacy requirements.
 
-No implementation should silently decide these product policies. Conservative
-denial may still be used to close an unsafe public boundary.
+Merge of that contract adopts the decisions. Application enforcement remains
+separate work in the six canonical M1 issues. Conservative denial remains the
+required behavior wherever an owner-bound or audited workflow is not yet
+implemented.
 
 ## 9. Non-blocking backlog hygiene
 
