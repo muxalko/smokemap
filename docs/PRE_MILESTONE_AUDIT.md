@@ -169,17 +169,22 @@ denial may still be used to close an unsafe public boundary.
 
 ## 9. Non-blocking backlog hygiene
 
-After the planning-sync pull request is approved and merged:
+Completed on 2026-08-19 under root issue `#13`:
 
-- close six stale backend Dependabot PRs and regenerate dependency updates in
-  M5 against the current manifests and history;
-- inspect obsolete branches before deletion and preserve every branch with
-  unique history;
-- keep frontend clean-root deployment trees intact;
-- preserve backend history and define deployment-branch promotion before
-  reconciling it.
+- closed stale backend Dependabot PRs `#30`, `#38`, `#40`, `#41`, `#46`, and
+  `#47` without merging; dependency updates must be regenerated in M5 against
+  the current manifests and history;
+- fetched the backend remote and verified that `13-secure-django-endpoints`
+  was 116 commits behind `development` with zero unique commits, then deleted
+  that obsolete remote branch;
+- preserved `muxalko-patch-1`, which had one commit unique from backend
+  `development`, and preserved backend `main`, `staging`, and `development`;
+- preserved the independent frontend `main`, `staging`, and `development`
+  clean-root trees.
 
-This hygiene is administrative cleanup, not an M1 prerequisite.
+Backend deployment-branch reconciliation remains intentionally deferred to
+the M5 promotion plan. This completed hygiene is administrative cleanup, not
+an M1 security prerequisite.
 
 ## 10. Readiness decision
 
