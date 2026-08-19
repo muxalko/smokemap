@@ -115,7 +115,7 @@ if [[ "$1" == "pr" && "${2:-}" == "create" ]]; then
     command_output="$(GH_TOKEN="$installation_token" gh "$@")"
     printf '%s\n' "$command_output"
     pull_request_url="$(printf '%s\n' "$command_output" | tail -n 1)"
-    expected_author="${APP_SLUG}[bot]"
+    expected_author="app/${APP_SLUG}"
     actual_author="$(
         GH_TOKEN="$installation_token" gh pr view "$pull_request_url" \
             --json author --jq '.author.login'
