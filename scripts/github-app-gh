@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+set +x
+
+readonly APP_ID="${SMOKEMAP_GITHUB_APP_ID:-4606700}"
+readonly APP_OWNER="${SMOKEMAP_GITHUB_APP_OWNER:-muxalko}"
+readonly APP_SLUG="${SMOKEMAP_GITHUB_APP_SLUG:-muxalko-smokemap-codex}"
+readonly PRIVATE_KEY="${SMOKEMAP_GITHUB_APP_PRIVATE_KEY:-${HOME}/workspace/.config/smokemap/muxalko-smokemap-codex.2026-08-15.private-key.pem}"
+readonly API_VERSION="2022-11-28"
+
+usage() {
+    printf '%s\n' \
+        'Usage: scripts/github-app-gh --check' \
+        '       scripts/github-app-gh <gh arguments...>' \
+        '' \
+        'Runs gh with a short-lived Smokemap GitHub App installation token.' \
+        'Pull requests created with `pr create` are checked for the expected bot author.' \
+        '' \
+        'Non-secret configuration overrides:' \
+        '  SMOKEMAP_GITHUB_APP_ID' \
+        '  SMOKEMAP_GITHUB_APP_OWNER' \
+        '  SMOKEMAP_GITHUB_APP_SLUG' \
+        '  SMOKEMAP_GITHUB_APP_PRIVATE_KEY'
+}
+
+fail() {
+    printf 'github-app-gh: %s\n' "$1" >&2
+    exit 1
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || fail "required command not found: $1"
+}
+
+base64url() {
+    openssl base64 -A | tr '+/' '-_' | tr -d '='
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    usage
+    exit 0
+fi
+
+for required_command in curl gh jq openssl; do
+    require_command "$required_command"
+done
+
+[[ "$APP_ID" =~ ^[0-9]+$ ]] || fail 'App ID must contain only digits'
+[[ -f "$PRIVATE_KEY" ]] || fail "private key not found: $PRIVATE_KEY"
+[[ ! -L "$PRIVATE_KEY" ]] || fail 'private key must not be a symbolic link'
+
+key_mode="$(stat -c '%a' "$PRIVATE_KEY")"
+[[ "$key_mode" == "600" ]] || fail 'private key must have mode 0600'
+
+issued_at="$(($(date +%s) - 60))"
+expires_at="$((issued_at + 600))"
+header="$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | base64url)"
+payload="$(printf '{"iat":%s,"exp":%s,"iss":"%s"}' "$issued_at" "$expires_at" "$APP_ID" | base64url)"
+unsigned_jwt="${header}.${payload}"
+signature="$(printf '%s' "$unsigned_jwt" | openssl dgst -sha256 -sign "$PRIVATE_KEY" | base64url)"
+app_jwt="${unsigned_jwt}.${signature}"
+
+temporary_directory="$(mktemp -d)"
+trap 'rm -rf -- "$temporary_directory"' EXIT
+installations_response="${temporary_directory}/installations.json"
+token_response="${temporary_directory}/token.json"
+
+curl --fail --silent --show-error \
+    --output "$installations_response" \
+    --header "Accept: application/vnd.github+json" \
+    --header "Authorization: Bearer ${app_jwt}" \
+    --header "X-GitHub-Api-Version: ${API_VERSION}" \
+    'https://api.github.com/app/installations'
+
+installation_id="$(
+    jq -er --arg owner "$APP_OWNER" \
+        '[.[] | select(.account.login == $owner)] | if length == 1 then .[0].id else error("expected exactly one matching installation") end' \
+        "$installations_response"
+)" || fail "could not resolve the App installation for ${APP_OWNER}"
+authenticated_slug="$(
+    jq -er --arg owner "$APP_OWNER" \
+        '[.[] | select(.account.login == $owner)] | if length == 1 then .[0].app_slug else error("expected exactly one matching installation") end' \
+        "$installations_response"
+)" || fail "could not verify the App slug for ${APP_OWNER}"
+[[ "$authenticated_slug" == "$APP_SLUG" ]] \
+    || fail "authenticated App slug is ${authenticated_slug}, expected ${APP_SLUG}"
+
+curl --fail --silent --show-error \
+    --request POST \
+    --output "$token_response" \
+    --header "Accept: application/vnd.github+json" \
+    --header "Authorization: Bearer ${app_jwt}" \
+    --header "X-GitHub-Api-Version: ${API_VERSION}" \
+    "https://api.github.com/app/installations/${installation_id}/access_tokens"
+
+installation_token="$(jq -er '.token' "$token_response")" \
+    || fail 'GitHub did not return an installation token'
+
+GH_TOKEN="$installation_token" gh api installation/repositories \
+    --silent >/dev/null \
+    || fail 'could not verify the GitHub App installation token'
+
+if [[ "${1:-}" == "--check" ]]; then
+    printf 'Authenticated as GitHub App %s for owner %s.\n' "$APP_SLUG" "$APP_OWNER"
+    exit 0
+fi
+
+[[ $# -gt 0 ]] || {
+    usage >&2
+    exit 2
+}
+
+if [[ "$1" == "pr" && "${2:-}" == "create" ]]; then
+    command_output="$(GH_TOKEN="$installation_token" gh "$@")"
+    printf '%s\n' "$command_output"
+    pull_request_url="$(printf '%s\n' "$command_output" | tail -n 1)"
+    expected_author="app/${APP_SLUG}"
+    actual_author="$(
+        GH_TOKEN="$installation_token" gh pr view "$pull_request_url" \
+            --json author --jq '.author.login'
+    )" || fail 'pull request was created but its author could not be verified'
+    [[ "$actual_author" == "$expected_author" ]] \
+        || fail "pull request author is ${actual_author}, expected ${expected_author}"
+    exit 0
+fi
+
+exec env GH_TOKEN="$installation_token" gh "$@"
