@@ -8,6 +8,7 @@ Evidence base:
 
 - [Joint architecture and engineering assessment](ARCHITECTURE_ASSESSMENT.md)
 - [Pre-milestone audit](PRE_MILESTONE_AUDIT.md)
+- [M1 security and authorization contract](M1_SECURITY_POLICY.md)
 
 ## 1. Planning model
 
@@ -75,18 +76,19 @@ the final product decisions are approved.
 
 ### Entry decisions
 
-Before role implementation depends on them, approve or explicitly defer:
+The [M1 security and authorization contract](M1_SECURITY_POLICY.md) resolves:
 
 1. the guest, user, moderator, and administrator permission matrix;
-2. whether guests may submit and how guest ownership is represented;
+2. authenticated-only submission ownership and denial of guest submissions;
 3. the difference between moderator and administrator powers;
-4. access/refresh lifetimes, rotation, revocation, reuse, and transport;
+4. five-minute access and seven-day refresh lifetimes, rotation, revocation,
+   reuse, and transport;
 5. logout and terminal refresh-failure behavior;
-6. the server-only session boundary used for protected backend requests;
+6. the server-handled, browser-hidden credential boundary;
 7. minimum audit and privacy requirements for user and moderator identity.
 
-These decisions are the next planned activity after the planning-sync change is
-merged. They do not postpone conservative containment of anonymous writes.
+Merge of the contract adopts these decisions. Application enforcement remains
+tracked in the six canonical M1 issues below.
 
 ### Unfinished security blockers
 
@@ -123,10 +125,9 @@ Frontend:
 1. Verify and close the same-origin boundary issue if its smoke criteria pass.
 2. Close anonymous place writes and restrict moderation conservatively on the
    backend.
-3. Record the final permission matrix and enforce it consistently in REST and
-   GraphQL.
-4. Define and test login, expiry, refresh rotation/reuse, revocation, logout,
-   and failure semantics.
+3. Enforce the adopted permission matrix consistently in REST and GraphQL.
+4. Implement and test the adopted login, expiry, refresh rotation/reuse,
+   revocation, logout, and failure semantics.
 5. Keep refresh credentials server-side and remove backend tokens from the
    browser-visible session.
 6. Add frontend role checks for destructive actions while continuing to treat
@@ -194,7 +195,8 @@ M1 is done only when:
 ### Ordered work
 
 1. Introduce explicit submission states and database constraints.
-2. Link submissions to authenticated users or the approved guest capability.
+2. Carry the M1 authenticated owner relation through every submission state;
+   guest submission remains disabled.
 3. Separate proposed content from approved places.
 4. Move geocoding out of model `save()` into an explicit service or job.
 5. Validate coordinates, category, tags, website, description, and uniqueness
@@ -298,4 +300,5 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-16 | Credential/history cleanup | Completed | Clean supported histories, revoked credentials, redacted scans |
 | 2026-08-19 | Pre-milestone audit | Completed | `PRE_MILESTONE_AUDIT.md` |
 | 2026-08-19 | Non-blocking backlog hygiene | Completed | Root issue `#13`; six stale backend dependency PRs closed; zero-unique-commit branch retired |
+| 2026-08-19 | M1 security and authorization contract | Adopted | `M1_SECURITY_POLICY.md`; root issue `#15` |
 | 2026-08-19 | M1 | Set to Current | Canonical M1–M5 plan synchronized with GitHub |

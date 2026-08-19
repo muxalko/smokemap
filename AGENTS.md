@@ -22,9 +22,10 @@ The application repositories deploy independently. Preserve that boundary unless
 
 See `docs/ARCHITECTURE_ASSESSMENT.md` for the original evidence,
 `docs/PRE_MILESTONE_AUDIT.md` for the reconciled current state and
-`docs/ROADMAP.md` for the ordered remediation plan. A healthy local stack does
-not mean the known product, authorization, token-handling, upload or viewport
-defects are resolved.
+`docs/ROADMAP.md` for the ordered remediation plan. M1 implementation must also
+follow `docs/M1_SECURITY_POLICY.md`. A healthy local stack does not mean the
+known product, authorization, token-handling, upload or viewport defects are
+resolved.
 
 ## Verified local architecture
 
