@@ -20,7 +20,11 @@ The application repositories deploy independently. Preserve that boundary unless
 - Review, approve and delete submissions.
 - Enforce guest, user, moderator and administrator permissions on the backend.
 
-See `docs/ARCHITECTURE_ASSESSMENT.md` for evidence and `docs/ROADMAP.md` for the ordered remediation plan. A healthy local stack does not mean the known product, authorization, token-handling, upload or viewport defects are resolved.
+See `docs/ARCHITECTURE_ASSESSMENT.md` for the original evidence,
+`docs/PRE_MILESTONE_AUDIT.md` for the reconciled current state and
+`docs/ROADMAP.md` for the ordered remediation plan. A healthy local stack does
+not mean the known product, authorization, token-handling, upload or viewport
+defects are resolved.
 
 ## Verified local architecture
 
@@ -154,10 +158,11 @@ Backend tests deliberately override `POSTGRES_OPTIONS` to use the isolated test 
 Current verified baseline:
 
 - Django system check passes.
-- Seven backend tests pass, including initial category provisioning and local workflow coverage.
+- Eight backend tests pass, including initial category provisioning and local workflow coverage.
 - Frontend TypeScript checking passes.
 - ESLint passes with known warnings documented in the architecture assessment.
-- The frontend test command passes but reports no tests; adding meaningful tests is roadmap work, not evidence of coverage today.
+- Three focused frontend basemap tests pass. Critical authentication, viewport,
+  submission and moderation coverage remains M1 and later roadmap work.
 
 Code generation is explicit, not a `dev` precondition. This lets the frontend start reliably while still making schema drift a deliberate, reviewable change. Generated output must be inspected before committing.
 
@@ -180,7 +185,11 @@ When a sandbox cannot access host-published ports, test from inside the relevant
 Use a lightweight issue → branch → commit → pull request → squash-merge workflow in the superproject and each application repository. Superproject changes are limited to orchestration, shared documentation and tested submodule pointers; application code remains in its owning repository.
 
 1. Read this file, both repository statuses, relevant documentation and nearby code before editing.
-2. Select or create one small GitHub issue with an observable acceptance criterion. Add it to the Smokemap project, assign the appropriate milestone and priority, and move it to In Progress when work starts.
+2. Select or create one small GitHub issue with an observable acceptance
+   criterion. When a shared Smokemap Project exists, add the issue and move it
+   to In Progress. Application issues must use the appropriate milestone and
+   priority label. Pointer-only workspace integration issues may remain
+   unmilestoned when the root repository has no matching milestone.
 3. Start from a clean, current `development` branch. Fetch before reconciling remote history, and never discard or force-push divergent work; the pre-reconciliation backend history is preserved as `development-pre-sync-2026-08-10`.
 4. Create a branch named `issue-<number>-<short-slug>`, for example `issue-49-viewport-query-contract`.
 5. Preserve unrelated working-tree changes and make the smallest change that satisfies the issue. Cross-repository work uses a linked issue, branch and PR in each repository because the applications deploy independently.
@@ -192,7 +201,20 @@ Use a lightweight issue → branch → commit → pull request → squash-merge 
 
 After an application PR is merged, update its submodule pointer in a separate superproject issue, branch and PR only after the merged commit is available from the application remote. Never record a submodule commit that exists only locally. Verify pointer-only changes with `git submodule status`, `git diff --submodule=log`, `docker compose config --quiet` and proportional workspace checks.
 
-Both application repositories protect `development`: changes require a PR, administrators follow the same rule, force pushes and branch deletion are blocked, and review conversations must be resolved. Zero approvals are required for this lightweight single-maintainer phase. Only squash merges are enabled. Required CI checks should be added when the test/CI foundation tracked in the roadmap is reliable; until then, record local command evidence in every PR.
+All three repositories protect `development`: changes require a PR and one
+approval by `@muxalko`; administrators follow the same rule; force pushes and
+branch deletion are blocked; and review conversations must be resolved. Only
+squash merges are enabled. Required CI checks should be added when the test/CI
+foundation tracked in the roadmap is reliable; until then, record local command
+evidence in every PR.
+
+Application feature branches do not receive a Vercel preview under the current
+deployment settings. Test them through the local Compose frontend before
+requesting approval. `staging` and `main` are deployment branches. Promote
+tested content deliberately through an issue, a branch based on the target
+deployment tree and a reviewed PR. Do not assume a direct merge from
+`development`: the frontend trees have intentionally independent clean-root
+histories. Do not call the production branch `master`.
 
 Typical command sequence inside one application repository:
 
