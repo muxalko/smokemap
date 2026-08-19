@@ -15,7 +15,8 @@ usage() {
         '       scripts/github-app-gh <gh arguments...>' \
         '' \
         'Runs gh with a short-lived Smokemap GitHub App installation token.' \
-        'Pull requests created with `pr create` are checked for the expected bot author.' \
+        'Pull requests created with `pr create` are checked for the expected App author' \
+        'and automatically request the configured owner as human reviewer.' \
         '' \
         'Non-secret configuration overrides:' \
         '  SMOKEMAP_GITHUB_APP_ID' \
@@ -113,7 +114,6 @@ fi
 
 if [[ "$1" == "pr" && "${2:-}" == "create" ]]; then
     command_output="$(GH_TOKEN="$installation_token" gh "$@")"
-    printf '%s\n' "$command_output"
     pull_request_url="$(printf '%s\n' "$command_output" | tail -n 1)"
     expected_author="app/${APP_SLUG}"
     actual_author="$(
@@ -122,6 +122,17 @@ if [[ "$1" == "pr" && "${2:-}" == "create" ]]; then
     )" || fail 'pull request was created but its author could not be verified'
     [[ "$actual_author" == "$expected_author" ]] \
         || fail "pull request author is ${actual_author}, expected ${expected_author}"
+
+    GH_TOKEN="$installation_token" gh pr edit "$pull_request_url" \
+        --add-reviewer "$APP_OWNER" >/dev/null \
+        || fail "pull request was created but ${APP_OWNER} could not be requested as reviewer"
+    GH_TOKEN="$installation_token" gh pr view "$pull_request_url" \
+        --json reviewRequests \
+        | jq -e --arg reviewer "$APP_OWNER" \
+            '.reviewRequests | any(.login == $reviewer)' >/dev/null \
+        || fail "pull request was created but ${APP_OWNER} is not a requested reviewer"
+
+    printf '%s\n' "$command_output"
     exit 0
 fi
 
