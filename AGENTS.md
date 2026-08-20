@@ -201,8 +201,7 @@ private key from
 - Before a mutation, the helper must verify the installation belongs to
   `muxalko` and its App slug is `muxalko-smokemap-codex`.
 - After creating a pull request, the helper must verify that its author is
-  `app/muxalko-smokemap-codex`, request `muxalko` as the human reviewer and
-  verify that GitHub registered the review request.
+  `app/muxalko-smokemap-codex`.
 - Local Git remains the supported path for branch, commit and push operations.
   GitHub issues and pull requests use the App helper.
 
