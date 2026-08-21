@@ -1,4 +1,4 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-backend check-frontend test test-backend test-backend-fresh test-frontend migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-backend check-frontend test test-backend test-backend-fresh test-frontend provision-test-users migrate codegen
 
 init:
 	git submodule update --init --recursive
@@ -50,6 +50,9 @@ test-backend-fresh:
 
 test-frontend:
 	docker compose exec -T frontend yarn test:ci
+
+provision-test-users:
+	@docker compose exec -T -e SMOKEMAP_LOCAL_TEST_PASSWORD backend python manage.py provision_local_test_users
 
 migrate:
 	docker compose exec -T backend python manage.py migrate
