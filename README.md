@@ -21,6 +21,10 @@ For an existing clone, use `make sync` to restore the revisions recorded by the 
 
 Application changes follow their own issue, branch and pull-request workflow. After an application PR is merged and verified, update the corresponding submodule pointer in a separate root pull request.
 
+Pull requests and pushes to `development` initialize the pinned submodules,
+validate the Docker Compose configuration, and scan the full workspace history
+with Gitleaks. Secret-scan findings are redacted from CI output.
+
 Planning and evidence:
 
 - [Pre-milestone audit](docs/PRE_MILESTONE_AUDIT.md)
