@@ -2,13 +2,14 @@
 
 Status: Active planning document
 
-Last updated: 2026-08-19
+Last updated: 2026-08-21
 
 Evidence base:
 
 - [Joint architecture and engineering assessment](ARCHITECTURE_ASSESSMENT.md)
 - [Pre-milestone audit](PRE_MILESTONE_AUDIT.md)
 - [M1 security and authorization contract](M1_SECURITY_POLICY.md)
+- [M1 exit evidence](M1_EXIT_EVIDENCE.md)
 
 ## 1. Planning model
 
@@ -40,15 +41,15 @@ Status values:
 
 | Order | Canonical GitHub milestone | Status | Primary outcome |
 | ---: | --- | --- | --- |
-| 1 | M1 — Security and authorization foundation | **Current** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
-| 2 | M2 — Viewport map vertical slice | Next | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
+| 1 | M1 — Security and authorization foundation | **Done** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
+| 2 | M2 — Viewport map vertical slice | **Current** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
 | 3 | M3 — Submission and media vertical slice | Later | Validated submissions and zero-or-more verified uploads work end to end |
 | 4 | M4 — Moderation and search | Later | Moderation is atomic and auditable; search is bounded and relevant |
 | 5 | M5 — Production readiness | Later | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
 
 ## 3. Completed pre-milestone foundation
 
-The following work is complete and is not part of the remaining M1 exit gate:
+The following work was complete before M1 and was not part of its exit gate:
 
 - exposed credentials were revoked or rotated;
 - supported repository histories were cleaned and re-rooted where required;
@@ -59,14 +60,14 @@ The following work is complete and is not part of the remaining M1 exit gate:
   stack;
 - health endpoints, same-origin browser proxies, a safe schema baseline,
   provisional categories, and deterministic local mock places exist;
-- current checks pass with eight backend tests and three frontend tests;
+- the pre-M1 checks passed with eight backend tests and three frontend tests;
 - map empty-state, interaction flicker, and incomplete basemap-style warnings
   have focused fixes.
 
 A healthy local stack does not satisfy the security, permission, submission,
 upload, moderation, or viewport milestone criteria by itself.
 
-## 4. Current milestone — M1 security and authorization foundation
+## 4. Completed milestone — M1 security and authorization foundation
 
 ### Objective
 
@@ -87,23 +88,15 @@ The [M1 security and authorization contract](M1_SECURITY_POLICY.md) resolves:
 6. the server-handled, browser-hidden credential boundary;
 7. minimum audit and privacy requirements for user and moderator identity.
 
-Merge of the contract adopts these decisions. Application enforcement remains
+Merge of the contract adopted these decisions. Application enforcement was
 tracked in the six canonical M1 issues below.
 
-### Unfinished security blockers
+### Exit outcome
 
-Current source evidence shows that:
-
-- `PlaceViewSet` remains a full public `ModelViewSet` with `AllowAny`;
-- pending-request reads, approval, and deletion require only authentication,
-  not moderator or administrator authority;
-- presigning and image-record creation remain publicly callable and are not
-  bound to an owner or upload intent;
-- NextAuth copies backend access and refresh tokens into the browser-visible
-  session;
-- destructive frontend server actions do not independently check the role;
-- the role matrix and complete token lifecycle lack regression coverage;
-- secret scanning and application tests are not yet enforced in CI.
+All M1 security blockers are resolved at the merged application revisions
+pinned by the workspace. The complete criterion-to-test mapping, smoke results,
+CI evidence, and deliberately deferred production-build debt are recorded in
+[M1 exit evidence](M1_EXIT_EVIDENCE.md).
 
 ### Tracked M1 issues
 
@@ -120,7 +113,15 @@ Frontend:
 - `smokemap-webapp#4` — verify and close the mostly implemented same-origin
   browser boundary.
 
-### Ordered M1 course of action
+CI and exit follow-up:
+
+- `smokemap-django-backend#74` — enforce backend tests and secret scanning;
+- `smokemap-webapp#46` — enforce frontend secret scanning;
+- `smokemap-webapp#48` — restore runtime compilation and add a startup gate;
+- `smokemap#35` — enforce workspace integration and secret checks;
+- `smokemap#37` — record this exit evidence and advance the roadmap.
+
+### Completed M1 course of action
 
 1. Verify and close the same-origin boundary issue if its smoke criteria pass.
 2. Close anonymous place writes and restrict moderation conservatively on the
@@ -152,7 +153,7 @@ M1 is done only when:
 - routine logs and CI artifacts contain no authentication secrets;
 - automated tests fail when any protected boundary regresses.
 
-## 5. M2 — Viewport map vertical slice
+## 5. Current milestone — M2 viewport map vertical slice
 
 ### Entry criteria
 
@@ -302,3 +303,5 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-19 | Non-blocking backlog hygiene | Completed | Root issue `#13`; six stale backend dependency PRs closed; zero-unique-commit branch retired |
 | 2026-08-19 | M1 security and authorization contract | Adopted | `M1_SECURITY_POLICY.md`; root issue `#15` |
 | 2026-08-19 | M1 | Set to Current | Canonical M1–M5 plan synchronized with GitHub |
+| 2026-08-21 | M1 | Done | All exit criteria demonstrated in `M1_EXIT_EVIDENCE.md`; root issue `#37` |
+| 2026-08-21 | M2 | Set to Current | M1 exit gate demonstrated; viewport vertical slice may begin |
