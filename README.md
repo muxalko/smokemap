@@ -25,6 +25,26 @@ Pull requests and pushes to `development` initialize the pinned submodules,
 validate the Docker Compose configuration, and scan the full workspace history
 with Gitleaks. Secret-scan findings are redacted from CI output.
 
+## Local test accounts
+
+With the stack running, provision the repeatable login and moderation cohort:
+
+```sh
+make provision-test-users
+```
+
+This creates or updates one administrator (`admin@smokemap.local`) and two
+regular users (`user-one@smokemap.local` and `user-two@smokemap.local`). They
+use the documented local-only fallback password
+`Smokemap-local-test-only-2026!`. To replace it without adding the value to the
+command line or its output, set `SMOKEMAP_LOCAL_TEST_PASSWORD` in your shell
+before running the Make target.
+
+Sign in at `http://localhost:3000/api/auth/signin`. Submit a zero-image request
+as either regular user, then sign in as the administrator and review it at
+`http://localhost:3000/requests`. The command is idempotent, never prints the
+password, and refuses to run outside Django debug mode.
+
 Planning and evidence:
 
 - [Pre-milestone audit](docs/PRE_MILESTONE_AUDIT.md)
