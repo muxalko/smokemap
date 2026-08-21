@@ -1,5 +1,9 @@
 # Smokemap pre-milestone audit
 
+> Historical audit note (2026-08-21): the M1 gaps identified below have been
+> resolved. See [M1 exit evidence](M1_EXIT_EVIDENCE.md) and the current
+> [roadmap](ROADMAP.md) for the verified baseline and active milestone.
+
 Audit date: 2026-08-19
 
 Status: Completed evidence review and canonical action plan

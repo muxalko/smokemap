@@ -159,11 +159,14 @@ Backend tests deliberately override `POSTGRES_OPTIONS` to use the isolated test 
 Current verified baseline:
 
 - Django system check passes.
-- Eight backend tests pass, including initial category provisioning and local workflow coverage.
+- Twenty-five backend tests pass, including the authorization matrix, JWT
+  lifecycle, initial category provisioning and local workflow coverage.
 - Frontend TypeScript checking passes.
 - ESLint passes with known warnings documented in the architecture assessment.
-- Three focused frontend basemap tests pass. Critical authentication, viewport,
-  submission and moderation coverage remains M1 and later roadmap work.
+- Thirty-three frontend tests pass across authentication, authorization,
+  moderation guards, submission completion, viewport states and basemap
+  behavior. Frontend CI also compiles and serves the home page to catch
+  framework-level startup regressions.
 
 Code generation is explicit, not a `dev` precondition. This lets the frontend start reliably while still making schema drift a deliberate, reviewable change. Generated output must be inspected before committing.
 
