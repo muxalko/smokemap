@@ -1,0 +1,35 @@
+services:
+  db:
+    ports: !reset []
+
+  storage:
+    ports: !reset []
+
+  backend:
+    ports: !reset []
+
+  frontend:
+    environment:
+      NEXT_FONT_GOOGLE_MOCKED_RESPONSES: /workspace-e2e/google-font-mocks.cjs
+      NEXT_PUBLIC_MAP_STYLE: http://127.0.0.1:4173/style.json
+    ports: !reset []
+    volumes:
+      - ./e2e:/workspace-e2e:ro
+
+  e2e:
+    image: ghcr.io/puppeteer/puppeteer:24.16.0
+    init: true
+    entrypoint: ["node"]
+    command: ["e2e/viewport-pan.mjs"]
+    environment:
+      E2E_BASE_URL: http://frontend:3000
+    volumes:
+      - ./e2e:/home/pptruser/e2e:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+    shm_size: 1gb
+
+networks:
+  default:
+    internal: true

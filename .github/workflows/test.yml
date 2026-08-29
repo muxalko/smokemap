@@ -19,6 +19,16 @@ jobs:
       - run: git submodule status
       - run: docker compose config --quiet
 
+  viewport-pan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Exercise the real cross-app viewport pan
+        run: make test-e2e
+
   secrets:
     runs-on: ubuntu-latest
     steps:
