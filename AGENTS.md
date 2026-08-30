@@ -186,7 +186,12 @@ When a sandbox cannot access host-published ports, test from inside the relevant
 
 ## Engineering workflow
 
-Use a lightweight issue → branch → commit → pull request → squash-merge workflow in the superproject and each application repository. Superproject changes are limited to orchestration, shared documentation and tested submodule pointers; application code remains in its owning repository.
+Use an issue → branch → focused commit → pull request → required
+CI/secrets/E2E as applicable → independent agent review → resolve review
+conversations → GitHub App squash-merge workflow in the superproject and each
+application repository. No human approval is routinely required. Superproject
+changes are limited to orchestration, shared documentation and tested submodule
+pointers; application code remains in its owning repository.
 
 ### GitHub automation identity
 
@@ -224,21 +229,34 @@ configuration variables documented by `scripts/github-app-gh --help`.
 6. Add or update tests at the authorization/API boundary and the relevant UI behavior. Run proportional quality gates and smoke tests before requesting merge.
 7. Make focused, imperative commits. Include the issue number when it improves traceability, for example `Validate viewport bounds (#49)`.
 8. Push the feature branch and open a PR targeting `development`. The PR must include `Closes #<number>`, a concise behavior summary, verification evidence and any known follow-up work.
-9. Resolve every review conversation, then squash-merge the PR. GitHub deletes the remote feature branch automatically. An issue is Done only after its acceptance criteria pass and its PR is merged.
-10. Update architecture, roadmap and operating documentation when behavior or decisions change.
+9. Wait for all required CI, secret-scanning, and end-to-end checks that apply
+   to the owning repository, then obtain review from an independent agent that
+   did not author the change.
+10. Resolve every review conversation, then use the GitHub App to squash-merge
+    the PR. GitHub deletes the remote feature branch automatically. An issue is
+    Done only after its acceptance criteria pass and its PR is merged.
+11. Update architecture, roadmap and operating documentation when behavior or decisions change.
 
 After an application PR is merged, update its submodule pointer in a separate superproject issue, branch and PR only after the merged commit is available from the application remote. Never record a submodule commit that exists only locally. Verify pointer-only changes with `git submodule status`, `git diff --submodule=log`, `docker compose config --quiet` and proportional workspace checks.
 
-All three repositories protect `development`: changes require a PR and one
-approval by `@muxalko`; administrators follow the same rule; force pushes and
-branch deletion are blocked; and review conversations must be resolved. Only
-squash merges are enabled. Required CI checks should be added when the test/CI
-foundation tracked in the roadmap is reliable; until then, record local command
-evidence in every PR.
+All three repositories protect `development` with strict, up-to-date required
+status checks, PR-only changes, administrator enforcement, linear history,
+required review-conversation resolution, and force-push and branch-deletion
+bans. The approving review count is `0`, so merge does not depend on a mandatory
+human approval. Only squash merges are enabled. The required checks are:
+
+- workspace: `integration`, `viewport-pan`, and `secrets`;
+- backend: `test` and `secrets`;
+- frontend: `test` and `secrets`.
+
+Human review is optional and is requested only for unresolved product or policy
+decisions, destructive or production changes, ambiguous scope, or an explicit
+user request. `@muxalko` is not a routine workflow dependency. Independent
+agent review and resolution of every review conversation remain required.
 
 Application feature branches do not receive a Vercel preview under the current
 deployment settings. Test them through the local Compose frontend before
-requesting approval. `staging` and `main` are deployment branches. Promote
+requesting merge. `staging` and `main` are deployment branches. Promote
 tested content deliberately through an issue, a branch based on the target
 deployment tree and a reviewed PR. Do not assume a direct merge from
 `development`: the frontend trees have intentionally independent clean-root
@@ -255,7 +273,7 @@ git add <paths>
 git commit -m "Concise imperative change (#<number>)"
 git push -u origin issue-<number>-<short-slug>
 scripts/github-app-gh pr create --base development --title "Concise outcome" --body "Closes #<number>"
-gh pr merge --squash --delete-branch
+scripts/github-app-gh pr merge --squash --delete-branch
 ```
 
 Do not install host dependencies, run production migrations, contact external storage/services or use production secrets for ordinary development. Prefer the local Compose services.
