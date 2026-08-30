@@ -1,4 +1,6 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-backend check-frontend test test-backend test-backend-fresh test-frontend provision-test-users migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e provision-test-users migrate codegen
+
+E2E_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e
 
 init:
 	git submodule update --init --recursive
@@ -50,6 +52,27 @@ test-backend-fresh:
 
 test-frontend:
 	docker compose exec -T frontend yarn test:ci
+
+test-e2e:
+	@set -eu; \
+	cleanup() { \
+		$(E2E_COMPOSE) exec -T \
+			-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
+			backend python manage.py shell < e2e/viewport-fixtures.py || true; \
+		$(E2E_COMPOSE) down --remove-orphans; \
+	}; \
+	trap cleanup EXIT HUP INT TERM; \
+	$(E2E_COMPOSE) up --build --detach --wait \
+		db storage storage-init backend frontend; \
+	$(E2E_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=seed \
+		backend python manage.py shell < e2e/viewport-fixtures.py; \
+	$(E2E_COMPOSE) run --rm --no-deps e2e; \
+	$(E2E_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
+		backend python manage.py shell < e2e/viewport-fixtures.py; \
+	$(E2E_COMPOSE) down --remove-orphans; \
+	trap - EXIT HUP INT TERM
 
 provision-test-users:
 	@docker compose exec -T -e SMOKEMAP_LOCAL_TEST_PASSWORD backend python manage.py provision_local_test_users

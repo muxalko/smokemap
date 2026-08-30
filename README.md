@@ -25,6 +25,25 @@ Pull requests and pushes to `development` initialize the pinned submodules,
 validate the Docker Compose configuration, and scan the full workspace history
 with Gitleaks. Secret-scan findings are redacted from CI output.
 
+## Cross-application viewport test
+
+Run the M2 browser pan test from the workspace root:
+
+```sh
+make test-e2e
+```
+
+The target starts an isolated `smokemap-e2e` Compose project on an internal-only
+network, seeds two namespaced PostGIS fixtures, and runs the Chromium version
+bundled with the pinned Puppeteer container. Chromium opens the first real
+MapLibre marker, drags the map into a disjoint viewport, verifies the live
+frontend-proxied GeoJSON contains only the second fixture, and opens its marker.
+A root-owned blank basemap and local Next font response remove network
+variability. The internal Compose network and browser request guard reject
+external traffic. The target removes the fixtures and test containers whether
+the browser passes or fails; the isolated named volumes are preserved for
+faster subsequent runs.
+
 ## Local test accounts
 
 With the stack running, provision the repeatable login and moderation cohort:
