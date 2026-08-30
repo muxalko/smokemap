@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-08-21
+Last updated: 2026-08-30
 
 Evidence base:
 
@@ -10,6 +10,7 @@ Evidence base:
 - [Pre-milestone audit](PRE_MILESTONE_AUDIT.md)
 - [M1 security and authorization contract](M1_SECURITY_POLICY.md)
 - [M1 exit evidence](M1_EXIT_EVIDENCE.md)
+- [M2 exit evidence](M2_EXIT_EVIDENCE.md)
 
 ## 1. Planning model
 
@@ -42,8 +43,8 @@ Status values:
 | Order | Canonical GitHub milestone | Status | Primary outcome |
 | ---: | --- | --- | --- |
 | 1 | M1 — Security and authorization foundation | **Done** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
-| 2 | M2 — Viewport map vertical slice | **Current** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
-| 3 | M3 — Submission and media vertical slice | Later | Validated submissions and zero-or-more verified uploads work end to end |
+| 2 | M2 — Viewport map vertical slice | **Done** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
+| 3 | M3 — Submission and media vertical slice | **Blocked** | Validated submissions and zero-or-more verified uploads work end to end |
 | 4 | M4 — Moderation and search | Later | Moderation is atomic and auditable; search is bounded and relevant |
 | 5 | M5 — Production readiness | Later | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
 
@@ -153,7 +154,14 @@ M1 is done only when:
 - routine logs and CI artifacts contain no authentication secrets;
 - automated tests fail when any protected boundary regresses.
 
-## 5. Current milestone — M2 viewport map vertical slice
+## 5. Completed milestone — M2 viewport map vertical slice
+
+### Exit outcome
+
+Every M2 ordered item and exit criterion is demonstrated at merged root
+`74383bc`, backend `48d1a8a`, and frontend `ad334dd`. The complete functional,
+real-browser, natural-query-plan, performance, CI, and host-measurement record
+is in [M2 exit evidence](M2_EXIT_EVIDENCE.md).
 
 ### Entry criteria
 
@@ -185,7 +193,18 @@ M1 is done only when:
 - invalid or oversized bounds fail predictably;
 - the query meets an agreed performance budget.
 
-## 6. M3 — Submission and media vertical slice
+## 6. Blocked milestone — M3 submission and media vertical slice
+
+### Blocking policy decision
+
+M3 must not begin until an authoritative contract approves the complete
+submission and media policy required by its entry criteria. The M1 contract
+decides authenticated ownership, guest denial, and minimum fail-closed upload
+constraints, but deliberately leaves the full state/transition and retention
+model; coordinate/address, category, tag, and field rules; zero-or-more media
+semantics and limits; retry and partial-failure behavior; object visibility and
+attachment; and abandoned intent/object cleanup unapproved. M3 therefore
+remains **Blocked** even though M2 is Done.
 
 ### Entry criteria
 
@@ -305,3 +324,5 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-19 | M1 | Set to Current | Canonical M1–M5 plan synchronized with GitHub |
 | 2026-08-21 | M1 | Done | All exit criteria demonstrated in `M1_EXIT_EVIDENCE.md`; root issue `#37` |
 | 2026-08-21 | M2 | Set to Current | M1 exit gate demonstrated; viewport vertical slice may begin |
+| 2026-08-30 | M2 | Done | All ordered work and exit criteria demonstrated in `M2_EXIT_EVIDENCE.md` at root `74383bc`, backend `48d1a8a`, and frontend `ad334dd` |
+| 2026-08-30 | M3 | Blocked | Complete submission and media policy required by the entry criteria has not been approved |

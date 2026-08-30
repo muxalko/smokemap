@@ -10,14 +10,15 @@ Method: Read-only source, configuration, repository, and static-analysis review
 
 Execution plan: [Smokemap Execution Roadmap](ROADMAP.md)
 
-Current-state note (2026-08-19): this assessment records the evidence observed
+Current-state note (2026-08-30): this assessment records the evidence observed
 on 2026-08-10. Credential/history cleanup, repository governance, the complete
-Compose baseline, health endpoints, same-origin browser proxies, deterministic
-local data, map fixes, and additional tests have since landed. The unresolved
-authorization, token exposure, upload, moderation, submission, viewport, and
-search findings remain planning inputs. See the
-[pre-milestone audit](PRE_MILESTONE_AUDIT.md) for the reconciled current state
-and `ROADMAP.md` for the canonical M1–M5 execution sequence.
+Compose baseline, health endpoints, M1 authorization and token boundaries, and
+the complete M2 bounded-viewport slice have since landed. The submission,
+media, moderation, search, and production-readiness findings remain planning
+inputs. See the [pre-milestone audit](PRE_MILESTONE_AUDIT.md),
+[M1 exit evidence](M1_EXIT_EVIDENCE.md),
+[M2 exit evidence](M2_EXIT_EVIDENCE.md), and [roadmap](ROADMAP.md) for the
+reconciled state and canonical M1–M5 execution sequence.
 
 ## 1. Executive conclusion
 
