@@ -23,7 +23,15 @@ Working rules:
 
 1. Keep one milestone in active product development at a time.
 2. Do not start a dependent milestone until its entry criteria are satisfied.
-3. Use issue → branch → focused commit → pull request → approval → squash merge.
+3. Use issue → branch → focused commit → pull request → required
+   CI/secrets/E2E as applicable → independent agent review → resolve review
+   conversations → GitHub App squash merge. Keep `development` PR-only and
+   its required checks strict and up to date, with administrator enforcement,
+   linear history, conversation resolution, force-push and deletion bans, and
+   an approving review count of `0`; human review is optional only for
+   unresolved product or policy decisions, destructive or production changes,
+   ambiguous scope, or an explicit user request, and `@muxalko` is not a
+   routine dependency.
 4. Add tests at the authorization, API, or UI boundary being changed.
 5. Record product and architecture decisions before implementation depends on
    them.
@@ -56,7 +64,9 @@ The following work was complete before M1 and was not part of its exit gate:
 - supported repository histories were cleaned and re-rooted where required;
 - redacted Gitleaks full-history scans pass in all three repositories;
 - repositories are public and `development` is protected;
-- only squash merges are enabled and one approval is required;
+- at that pre-milestone checkpoint, only squash merges were enabled and one
+  approval was required; this is historical evidence, not the active working
+  rule;
 - Docker Compose starts the complete frontend, backend, PostGIS, and MinIO
   stack;
 - health endpoints, same-origin browser proxies, a safe schema baseline,
