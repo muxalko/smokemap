@@ -11,6 +11,7 @@ Evidence base:
 - [M1 security and authorization contract](M1_SECURITY_POLICY.md)
 - [M1 exit evidence](M1_EXIT_EVIDENCE.md)
 - [M2 exit evidence](M2_EXIT_EVIDENCE.md)
+- [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md)
 
 ## 1. Planning model
 
@@ -52,7 +53,7 @@ Status values:
 | ---: | --- | --- | --- |
 | 1 | M1 — Security and authorization foundation | **Done** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
 | 2 | M2 — Viewport map vertical slice | **Done** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
-| 3 | M3 — Submission and media vertical slice | **Blocked** | Validated submissions and zero-or-more verified uploads work end to end |
+| 3 | M3 — Submission and media vertical slice | **Current** | Validated submissions and zero-or-more verified uploads work end to end |
 | 4 | M4 — Moderation and search | Later | Moderation is atomic and auditable; search is bounded and relevant |
 | 5 | M5 — Production readiness | Later | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
 
@@ -203,50 +204,93 @@ is in [M2 exit evidence](M2_EXIT_EVIDENCE.md).
 - invalid or oversized bounds fail predictably;
 - the query meets an agreed performance budget.
 
-## 6. Blocked milestone — M3 submission and media vertical slice
+## 6. Current milestone — M3 submission and media vertical slice
 
-### Blocking policy decision
+### Entry decision
 
-M3 must not begin until an authoritative contract approves the complete
-submission and media policy required by its entry criteria. The M1 contract
-decides authenticated ownership, guest denial, and minimum fail-closed upload
-constraints, but deliberately leaves the full state/transition and retention
-model; coordinate/address, category, tag, and field rules; zero-or-more media
-semantics and limits; retry and partial-failure behavior; object visibility and
-attachment; and abandoned intent/object cleanup unapproved. M3 therefore
-remains **Blocked** even though M2 is Done.
+The [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md) resolves
+the full state/transition and retention model, including a distinct expired
+draft state and M4-reserved withdrawal and moderation transitions;
+coordinate/address, stable category slug, tag, deterministic syntactic-only
+HTTPS website, description, privacy-scoped spatial duplicate, and a
+transaction-scoped lock keyed by the full canonical name; zero-or-more media
+semantics and limits; retry and partial-failure behavior; private-before-
+approval object visibility;
+transactional three-slot owner-bound media; server-verified object-byte
+SHA-256; and the unified 24-hour `cleanup_pending` SLA. It preserves the M1
+authenticated-owner, guest-denial, authorization, audit, and fail-closed
+legacy-write boundaries. Adoption of that contract satisfies the remaining
+entry decision, so M3 is **Current**; it does not activate M4 withdrawal,
+approval, or rejection.
 
 ### Entry criteria
 
 - M1 is complete.
 - Submission ownership, state, coordinate, category, tag, and media policies
-  are approved.
+  are approved in the
+  [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md).
 
 ### Ordered work
 
-1. Introduce explicit submission states and database constraints.
+1. Introduce M3-reachable `draft`, `pending`, and distinct `expired` states;
+   distinctly model but reserve `withdrawn`, `approved`, and `rejected` for M4;
+   and add database constraints and immutable lifecycle events.
 2. Carry the M1 authenticated owner relation through every submission state;
    guest submission remains disabled.
 3. Separate proposed content from approved places.
 4. Move geocoding out of model `save()` into an explicit service or job.
-5. Validate coordinates, category, tags, website, description, and uniqueness
-   at the API boundary.
-6. Make submission creation retry-safe and preserve lifecycle history.
-7. Add upload intents with exact object key, owner, submission, MIME, size, and
-   state.
+5. Validate coordinates, exact stable category slugs, tags, optional HTTPS
+   websites by deterministic syntax only with ASCII/Punycode multi-label hosts
+   and a code-owned reserved/special-use rejection list, descriptions, and
+   privacy-scoped duplicates with geography `ST_DWithin(..., 25.0)`; perform no
+   DNS/network/fetch during website validation; remove global place-name
+   uniqueness.
+6. Serialize every M3 lifecycle transition with submission row locking, make
+   writes retry-safe, preserve lifecycle history, and acquire a transaction-
+   scoped lock keyed by the full canonical name before duplicate checks,
+   independent of whether any matching row exists.
+7. Add upload intents with exact storage object identifier, owner, submission,
+   MIME, size, server-verified object-byte SHA-256, state, and transactionally
+   locked three-slot accounting.
 8. Issue one constrained presigned request per file.
-9. Await, verify, complete, and clean up each upload independently.
+9. Await, verify, attach, and clean up each upload independently, with
+   deterministic failure handoff and the unified 24-hour `cleanup_pending`
+   deletion-attempt SLA.
 10. Rebuild the frontend form around deterministic zero-or-more image behavior.
+11. Keep every legacy submission/media write fail-closed and both withdrawal
+    transitions plus every approval or rejection transition disabled for all
+    roles until M4.
 
 ### Exit criteria
 
-- only documented submission transitions succeed;
+- only create → `draft`, owner draft edit/media, `draft` → `pending`, and system
+  `draft` → `expired` succeed; both withdrawal transitions, approval, and
+  rejection remain fail-closed for every role;
+- every M3 lifecycle and media/cleanup race has one deterministic winner and
+  no extra state, event, attachment, slot, or cleanup target;
 - validation failures leave no partial rows;
+- duplicate checks use the exact 25-metre geography predicate without leaking
+  another owner's private proposal or imposing global name uniqueness;
 - zero, one, and multiple uploads handle retry and partial failure correctly;
+- concurrent intent and attachment operations cannot allocate a fourth slot,
+  and stored SHA-256 values are computed from object bytes by the backend;
 - a client cannot attach another submission's object;
-- abandoned objects and intents have a tested cleanup path.
+- abandoned objects and intents have a tested exact-key cleanup path whose
+  deletion attempt begins within 24 hours of `cleanup_pending`.
 
 ## 7. M4 — Moderation and search
+
+### Activation boundary
+
+The M3 contract distinctly models `draft` → `withdrawn`, `pending` →
+`withdrawn`, `pending` → `approved`, and `pending` → `rejected`, but all four
+transitions and every legacy equivalent remain disabled throughout M3. M4 must
+implement owner withdrawal and moderator rejection as distinct lifecycle
+actions and may enable them, together with approval, only with the serialized
+services and M4 race, rollback, authorization, audit, privacy-scoped duplicate,
+cleanup, and public-delivery tests required by that contract. Withdrawal and
+rejection are each separate from system draft expiry and from exceptional
+administrator hard deletion, which remains the separate M1 audited operation.
 
 ### Entry criteria
 
@@ -255,11 +299,19 @@ remains **Blocked** even though M2 is Done.
 
 ### Ordered work
 
-1. Implement moderation through a dedicated service with row locking and
-   `transaction.atomic()`.
-2. Record the authenticated moderator and immutable audit events.
-3. Separate rejection, withdrawal, and deletion.
-4. Add rollback, injected-failure, and simultaneous-approval tests.
+1. Implement both owner withdrawal transitions, moderator approval, and
+   moderator rejection as explicit lifecycle services that lock the submission
+   inside `transaction.atomic()` and recheck every precondition; approval also
+   acquires a transaction-scoped lock keyed by the full canonical name,
+   independent of existing rows, before duplicate revalidation.
+2. Record the backend-owned authenticated owner or moderator, as applicable,
+   and immutable lifecycle/audit events.
+3. Keep owner withdrawal and moderator rejection distinct from each other,
+   from system expiry, and from the M1 exceptional audited hard-deletion path.
+4. Add rollback, injected-failure, simultaneous-withdrawal, simultaneous-
+   approval, simultaneous-rejection, finalize/withdrawal, withdrawal/expiry,
+   approval/rejection, approval/withdrawal, rejection/withdrawal, duplicate-
+   approval, and media-cleanup race tests before enabling any M4 transition.
 5. Define a bounded search contract with geographic/category context.
 6. Add indexes, ranking, result caps, debounce, cancellation, and stale-response
    protection.
@@ -268,7 +320,8 @@ remains **Blocked** even though M2 is Done.
 ### Exit criteria
 
 - partial or concurrent moderation cannot corrupt state;
-- every moderation action is authorized and auditable;
+- every withdrawal, approval, and rejection action is authorized, auditable,
+  and distinct from exceptional M1 audited hard deletion;
 - search never retrieves the full place-name collection;
 - results are capped, relevant, and protected from response reordering.
 
@@ -335,4 +388,4 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-21 | M1 | Done | All exit criteria demonstrated in `M1_EXIT_EVIDENCE.md`; root issue `#37` |
 | 2026-08-21 | M2 | Set to Current | M1 exit gate demonstrated; viewport vertical slice may begin |
 | 2026-08-30 | M2 | Done | All ordered work and exit criteria demonstrated in `M2_EXIT_EVIDENCE.md` at root `74383bc`, backend `48d1a8a`, and frontend `ad334dd` |
-| 2026-08-30 | M3 | Blocked | Complete submission and media policy required by the entry criteria has not been approved |
+| 2026-08-30 | M3 | Set to Current | `M3_SUBMISSION_MEDIA_POLICY.md` adopted under root issue `#59`; complete entry policy approved |
