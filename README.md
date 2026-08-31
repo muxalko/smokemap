@@ -22,8 +22,27 @@ For an existing clone, use `make sync` to restore the revisions recorded by the 
 Application changes follow their own issue, branch and pull-request workflow. After an application PR is merged and verified, update the corresponding submodule pointer in a separate root pull request.
 
 Pull requests and pushes to `development` initialize the pinned submodules,
-validate the Docker Compose configuration, and scan the full workspace history
-with Gitleaks. Secret-scan findings are redacted from CI output.
+validate the Docker Compose configuration and media wiring, and scan the full
+workspace history with Gitleaks. Secret-scan findings are redacted from CI
+output.
+
+## Local submission media
+
+MinIO keeps the legacy `${MINIO_BUCKET:-smokemap-images}` bucket anonymously
+downloadable for existing public image paths. M3 source media uses the distinct
+`${MINIO_PRIVATE_MEDIA_BUCKET:-smokemap-media-private}` bucket, whose anonymous
+policy is reset to private whenever `storage-init` runs. The backend uses
+`http://storage:9000` for private object operations and signs browser uploads
+against `http://localhost:${MINIO_API_PORT:-9000}`.
+
+The `media-cleanup` service waits for a healthy backend and periodically runs
+the backend's durable cleanup command. `MEDIA_CLEANUP_BATCH_SIZE` (default
+`100`) controls each batch and `MEDIA_CLEANUP_INTERVAL_SECONDS` (default `300`)
+controls the delay between attempts. An individual command failure is logged
+and retried after the interval; invalid loop configuration fails at startup.
+No cleanup port is published, and the API/frontend do not depend on this
+service. Use `make check-compose` to validate the bucket policies, split
+endpoints, and cleanup wiring without starting the stack.
 
 ## Cross-application viewport test
 

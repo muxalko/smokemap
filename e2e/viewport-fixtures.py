@@ -43,7 +43,7 @@ def seed():
             addressString=fixture["address"],
             location=point,
         )
-        address.save(omit_geocode=True)
+        address.save()
         Place.objects.create(
             name=fixture["name"],
             category=category,

@@ -48,17 +48,25 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-smokemap-images}
+      MINIO_PRIVATE_MEDIA_BUCKET: ${MINIO_PRIVATE_MEDIA_BUCKET:-smokemap-media-private}
     entrypoint:
       - /bin/sh
       - -c
       - |
+        set -eu
+        if [ "$${MINIO_BUCKET}" = "$${MINIO_PRIVATE_MEDIA_BUCKET}" ]; then
+          echo "Legacy and private media buckets must be distinct." >&2
+          exit 64
+        fi
         mc alias set local http://storage:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
         mc mb --ignore-existing "local/$${MINIO_BUCKET}"
         mc anonymous set download "local/$${MINIO_BUCKET}"
+        mc mb --ignore-existing "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
+        mc anonymous set private "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
     restart: "no"
 
   backend:
-    build:
+    build: &backend-build
       context: ./smokemap-django-backend
       target: development
     init: true
@@ -66,7 +74,7 @@ services:
       - /bin/sh
       - -c
       - python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000
-    environment:
+    environment: &backend-environment
       SETTINGS_MODE: local
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-django-secret-change-me}
       POSTGRES_DB: ${POSTGRES_DB:-smokemap}
@@ -83,9 +91,13 @@ services:
       AWS_STORAGE_BUCKET_NAME: ${MINIO_BUCKET:-smokemap-images}
       AWS_S3_ENDPOINT_URL: http://localhost:${MINIO_API_PORT:-9000}
       AWS_S3_ADDRESSING_STYLE: path
+      MEDIA_STORAGE_BUCKET_NAME: ${MINIO_PRIVATE_MEDIA_BUCKET:-smokemap-media-private}
+      MEDIA_STORAGE_IDENTIFIER: smokemap-local-private-media-v1
+      MEDIA_STORAGE_INTERNAL_ENDPOINT_URL: http://storage:9000
+      MEDIA_UPLOAD_ENDPOINT_URL: http://localhost:${MINIO_API_PORT:-9000}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
-    volumes:
+    volumes: &backend-volumes
       - ./smokemap-django-backend:/app
     depends_on:
       db:
@@ -102,6 +114,46 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+    restart: unless-stopped
+
+  media-cleanup:
+    build: *backend-build
+    init: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        case "$${MEDIA_CLEANUP_BATCH_SIZE}" in
+          ''|*[!0-9]*|0)
+            echo "MEDIA_CLEANUP_BATCH_SIZE must be a positive integer." >&2
+            exit 64
+            ;;
+        esac
+        case "$${MEDIA_CLEANUP_INTERVAL_SECONDS}" in
+          ''|*[!0-9]*|0)
+            echo "MEDIA_CLEANUP_INTERVAL_SECONDS must be a positive integer." >&2
+            exit 64
+            ;;
+        esac
+        python manage.py check
+        while true; do
+          if python manage.py process_media_cleanup --batch-size "$${MEDIA_CLEANUP_BATCH_SIZE}"; then
+            :
+          else
+            cleanup_status=$$?
+            echo "Media cleanup iteration failed with status $${cleanup_status}; retrying after $${MEDIA_CLEANUP_INTERVAL_SECONDS}s." >&2
+          fi
+          sleep "$${MEDIA_CLEANUP_INTERVAL_SECONDS}"
+        done
+    environment:
+      <<: *backend-environment
+      MEDIA_CLEANUP_BATCH_SIZE: ${MEDIA_CLEANUP_BATCH_SIZE:-100}
+      MEDIA_CLEANUP_INTERVAL_SECONDS: ${MEDIA_CLEANUP_INTERVAL_SECONDS:-300}
+    volumes: *backend-volumes
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:

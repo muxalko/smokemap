@@ -40,13 +40,18 @@ Docker Compose is the canonical development environment. Host Node and Python in
 | PostgreSQL/PostGIS | `db:5432` | `localhost:5432` | Persistent named volume; application schema is `smokemap` |
 | MinIO API | `http://storage:9000` | `http://localhost:9000` | Local S3-compatible storage |
 | MinIO console | n/a | `http://localhost:9001` | Local inspection UI |
+| Media cleanup | n/a | n/a | Periodic backend cleanup command; no published port |
 
 Health endpoints:
 
 - Liveness: `http://localhost:8000/health/live/`
 - Readiness, including database access: `http://localhost:8000/health/ready/`
 
-Compose waits for PostGIS and MinIO health, creates the image bucket, runs migrations, waits for backend readiness, and only then starts the frontend. Ports bind to `127.0.0.1` and are not exposed on the LAN.
+Compose waits for PostGIS and MinIO health, creates the legacy download-public
+image bucket and the distinct private M3 source-media bucket, runs migrations,
+waits for backend readiness, and only then starts the frontend and periodic
+media cleanup service. Ports bind to `127.0.0.1` and are not exposed on the
+LAN; media cleanup has no published port.
 
 The stack was verified with Docker Engine 28.1.1, Compose v2.35.1, Python 3.12 and Node 22. These container runtimes make development reproducible; they do not make the legacy Django 4.2 or Next.js 13 application dependencies a supported long-term baseline. Framework selection and upgrades remain an explicit roadmap milestone.
 
@@ -68,7 +73,13 @@ For a new machine, only create a local `.env` when overrides are needed:
 cp .env.example .env
 ```
 
-Browser API reads use same-origin paths (`/api/smokemap/graphql` and `/api/smokemap/locations`) which Next.js proxies to `BACKEND_INTERNAL_URL`. This works whether the browser reaches the frontend directly, through a tunnel or through a development proxy. Next.js server code uses Compose service names via `BACKEND_INTERNAL_URL` and `GRAPHQL_INTERNAL_ENDPOINT`; never use browser `localhost` URLs from inside a container. The backend signs local MinIO uploads with the browser-reachable endpoint.
+Browser API reads use same-origin paths (`/api/smokemap/graphql` and `/api/smokemap/locations`) which Next.js proxies to `BACKEND_INTERNAL_URL`. This works whether the browser reaches the frontend directly, through a tunnel or through a development proxy. Next.js server code uses Compose service names via `BACKEND_INTERNAL_URL` and `GRAPHQL_INTERNAL_ENDPOINT`; never use browser `localhost` URLs from inside a container. Private M3 media operations use the internal `http://storage:9000` endpoint, while the backend signs direct browser uploads with the browser-reachable `http://localhost:<MinIO host port>` endpoint.
+
+`MINIO_BUCKET` remains the legacy anonymously downloadable image bucket.
+`MINIO_PRIVATE_MEDIA_BUCKET` names a separate anonymous-private bucket for M3
+source objects; `storage-init` refuses to use the same name for both. The
+periodic cleanup batch size and interval are safe local knobs documented in
+`.env.example`.
 
 The backend accepts both `http://localhost:<frontend-port>` and `http://127.0.0.1:<frontend-port>` as local CORS/CSRF origins. Compose derives these origins from `FRONTEND_PORT`; keep the Django origin configuration aligned if another browser hostname is introduced.
 
@@ -135,6 +146,9 @@ Named volumes preserve PostgreSQL, MinIO data, frontend dependencies and the Nex
 
 ## Quality gates
 
+`make check-compose` validates the rendered storage policies, endpoint/bucket
+wiring and cleanup-service isolation without requiring a running stack.
+
 The stack must be running before these commands:
 
 ```sh
@@ -174,9 +188,10 @@ Code generation is explicit, not a `dev` precondition. This lets the frontend st
 
 After infrastructure or dependency changes, verify all of the following:
 
-1. `docker compose config --quiet` succeeds.
+1. `make check-compose` succeeds (including `docker compose config --quiet`).
 2. `make dev-detached` exits successfully.
-3. `make ps` shows `db`, `storage`, `backend` and `frontend` healthy; `storage-init` must exit `0`.
+3. `make ps` shows `db`, `storage`, `backend` and `frontend` healthy and
+   `media-cleanup` running; `storage-init` must exit `0`.
 4. Frontend `/`, backend live/readiness, GraphQL `{ __typename }` and a bounded `/locations/?in_bbox=...` request return HTTP 200.
 5. Django reports the `smokemap` schema and a PostGIS version.
 6. `make check` and `make test` pass.
@@ -289,6 +304,7 @@ Do not install host dependencies, run production migrations, contact external st
 - `ENOSPC` during Docker builds: check both `df -h / /data` and `docker system df`. Do not prune unrelated images, volumes or caches without approval.
 - Backend waits indefinitely: inspect `docker compose logs backend db` and call `/health/ready/` from the backend container.
 - Frontend waits indefinitely: inspect `docker compose logs frontend`; the first request may trigger a development compilation.
-- MinIO initialization fails: inspect `docker compose logs storage storage-init`; success means the bucket exists and anonymous download access is configured for local image display.
+- MinIO initialization fails: inspect `docker compose logs storage storage-init`; success means the legacy bucket is anonymously downloadable and the distinct M3 source-media bucket is anonymous-private.
+- Media cleanup restarts or reports failed iterations: inspect `docker compose logs media-cleanup`; invalid batch/interval values fail before the loop, while individual command failures are logged and retried.
 - Test database schema errors: use `make test`; do not run the raw backend test command without its `POSTGRES_OPTIONS` override.
 - Port conflict: override only the host-side port in `.env` using `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MINIO_API_PORT` or `MINIO_CONSOLE_PORT`.
