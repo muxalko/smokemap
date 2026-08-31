@@ -1,4 +1,4 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e provision-test-users migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e provision-test-users migrate codegen
 
 E2E_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e
 
@@ -32,9 +32,12 @@ ps:
 	docker compose ps
 
 logs:
-	docker compose logs --follow backend frontend
+	docker compose logs --follow backend media-cleanup frontend
 
-check: check-backend check-frontend
+check: check-compose check-backend check-frontend
+
+check-compose:
+	./scripts/validate-compose.sh
 
 check-backend:
 	docker compose exec -T backend python manage.py check
