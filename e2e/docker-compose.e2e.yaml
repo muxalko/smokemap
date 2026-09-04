@@ -6,12 +6,25 @@ services:
     ports: !reset []
 
   backend:
+    environment:
+      # The presigned direct-upload URL the backend signs must be reachable
+      # from wherever the actual browser runs. In normal local development
+      # that browser is on the host, reaching MinIO via a published port; in
+      # this internal-only E2E network the browser runs inside the `e2e`
+      # Puppeteer container instead, so it must use the Compose service
+      # name/port. This does not change the internal endpoint the backend
+      # itself uses to read, seal, or delete objects.
+      MEDIA_UPLOAD_ENDPOINT_URL: http://storage:9000
     ports: !reset []
 
   frontend:
     environment:
       NEXT_FONT_GOOGLE_MOCKED_RESPONSES: /workspace-e2e/google-font-mocks.cjs
       NEXT_PUBLIC_MAP_STYLE: http://127.0.0.1:4173/style.json
+      # Same reasoning as MEDIA_UPLOAD_ENDPOINT_URL above: NextAuth resolves
+      # relative post-sign-in redirects against this URL, and only the
+      # Compose service name is reachable from the `e2e` Puppeteer container.
+      NEXTAUTH_URL: http://frontend:3000
     ports: !reset []
     volumes:
       - ./e2e:/workspace-e2e:ro
