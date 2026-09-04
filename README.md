@@ -63,6 +63,48 @@ external traffic. The target removes the fixtures and test containers whether
 the browser passes or fails; the isolated named volumes are preserved for
 faster subsequent runs.
 
+## Cross-application submission and media test
+
+Run the M3 browser submission and media test from the workspace root:
+
+```sh
+make test-e2e-submission-media
+```
+
+The target starts its own isolated `smokemap-e2e-submission-media` Compose
+project on an internal-only network, provisions the same repeatable
+`user-one@smokemap.local` local test account used by `make
+provision-test-users`, and drives the pinned Puppeteer Chromium through the
+real NextAuth credentials sign-in UI. Chromium then submits two places
+through the real M3 form: one with zero images and one with two real local
+image files, waiting in both cases for the on-page status banner to report a
+finalized `pending` submission rather than assuming success once the dialog
+closes. The second submission's images are hashed in-browser, uploaded
+directly to the private MinIO bucket with a real presigned POST issued by the
+backend, verified, and attached — end to end through the same GraphQL
+mutations the production form uses, with no mocked GraphQL, media or storage
+path. Because this internal network has no published host ports, the E2E
+Compose overlay signs uploads against the `storage:9000` Compose service
+address instead of the host-published MinIO port, and points `NEXTAUTH_URL`
+at the `frontend:3000` service address instead of `localhost`; both still
+exercise the same backend code paths a browser on the host would.
+
+After the browser run, the target execs into the backend container to verify
+backend and storage truth directly: both submissions belong to the signed-in
+owner and are `pending`; the zero-image submission has no attachments or
+leftover media intents; the multi-image submission has exactly two ordered,
+`attached` managed images with distinct server-verified SHA-256 digests, no
+non-terminal media intents, and no idempotency-row duplication; each attached
+image's sealed object exists in the private managed-media bucket at its exact
+recorded key and returns an anonymous-access error rather than its bytes; and
+each image's original (unsealed) upload object was already cleaned up by
+verification. The target seeds no fixtures ahead of time — it removes any
+prior run's same-named submissions, media, and MinIO objects before and after
+every run (regardless of outcome), so reruns never accumulate data. A failure
+at any step — sign-in, upload, verification, finalization, or the backend/
+storage checks — fails the target closed; nothing downstream is skipped or
+treated as a soft warning.
+
 ## Local test accounts
 
 With the stack running, provision the repeatable login and moderation cohort:

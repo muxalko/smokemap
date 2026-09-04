@@ -260,7 +260,7 @@ required review-conversation resolution, and force-push and branch-deletion
 bans. The approving review count is `0`, so merge does not depend on a mandatory
 human approval. Only squash merges are enabled. The required checks are:
 
-- workspace: `integration`, `viewport-pan`, and `secrets`;
+- workspace: `integration`, `viewport-pan`, `submission-media`, and `secrets`;
 - backend: `test` and `secrets`;
 - frontend: `test` and `secrets`.
 
