@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-08-30
+Last updated: 2026-09-04
 
 Evidence base:
 
@@ -12,6 +12,7 @@ Evidence base:
 - [M1 exit evidence](M1_EXIT_EVIDENCE.md)
 - [M2 exit evidence](M2_EXIT_EVIDENCE.md)
 - [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md)
+- [M3 exit evidence](M3_EXIT_EVIDENCE.md)
 
 ## 1. Planning model
 
@@ -53,8 +54,8 @@ Status values:
 | ---: | --- | --- | --- |
 | 1 | M1 — Security and authorization foundation | **Done** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
 | 2 | M2 — Viewport map vertical slice | **Done** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
-| 3 | M3 — Submission and media vertical slice | **Current** | Validated submissions and zero-or-more verified uploads work end to end |
-| 4 | M4 — Moderation and search | Later | Moderation is atomic and auditable; search is bounded and relevant |
+| 3 | M3 — Submission and media vertical slice | **Done** | Validated submissions and zero-or-more verified uploads work end to end |
+| 4 | M4 — Moderation and search | **Current** | Moderation is atomic and auditable; search is bounded and relevant |
 | 5 | M5 — Production readiness | Later | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
 
 ## 3. Completed pre-milestone foundation
@@ -204,7 +205,15 @@ is in [M2 exit evidence](M2_EXIT_EVIDENCE.md).
 - invalid or oversized bounds fail predictably;
 - the query meets an agreed performance budget.
 
-## 6. Current milestone — M3 submission and media vertical slice
+## 6. Completed milestone — M3 submission and media vertical slice
+
+### Exit outcome
+
+Every M3 ordered-work item and exit criterion is demonstrated at merged root
+`c2e5224`, backend `4fe254a`, and frontend `586e56d`. The complete
+criterion-to-implementation mapping, race and validation evidence, the real
+cross-application submission-and-media browser path, and CI/audit evidence
+are recorded in [M3 exit evidence](M3_EXIT_EVIDENCE.md).
 
 ### Entry decision
 
@@ -219,9 +228,8 @@ approval object visibility;
 transactional three-slot owner-bound media; server-verified object-byte
 SHA-256; and the unified 24-hour `cleanup_pending` SLA. It preserves the M1
 authenticated-owner, guest-denial, authorization, audit, and fail-closed
-legacy-write boundaries. Adoption of that contract satisfies the remaining
-entry decision, so M3 is **Current**; it does not activate M4 withdrawal,
-approval, or rejection.
+legacy-write boundaries. Adoption of that contract satisfied the remaining
+entry decision; it does not activate M4 withdrawal, approval, or rejection.
 
 ### Entry criteria
 
@@ -278,7 +286,7 @@ approval, or rejection.
 - abandoned objects and intents have a tested exact-key cleanup path whose
   deletion attempt begins within 24 hours of `cleanup_pending`.
 
-## 7. M4 — Moderation and search
+## 7. Current milestone — M4 moderation and search
 
 ### Activation boundary
 
@@ -389,3 +397,5 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-21 | M2 | Set to Current | M1 exit gate demonstrated; viewport vertical slice may begin |
 | 2026-08-30 | M2 | Done | All ordered work and exit criteria demonstrated in `M2_EXIT_EVIDENCE.md` at root `74383bc`, backend `48d1a8a`, and frontend `ad334dd` |
 | 2026-08-30 | M3 | Set to Current | `M3_SUBMISSION_MEDIA_POLICY.md` adopted under root issue `#59`; complete entry policy approved |
+| 2026-09-04 | M3 | Done | All ordered work and exit criteria demonstrated in `M3_EXIT_EVIDENCE.md` at root `c2e5224`, backend `4fe254a`, and frontend `586e56d`; final audit `586885c1c8844109b041d94d0befdc8b` returned `READY_TO_CLOSE_M3` |
+| 2026-09-04 | M4 | Set to Current | M3 exit gate demonstrated; moderation and search vertical slice may begin |
