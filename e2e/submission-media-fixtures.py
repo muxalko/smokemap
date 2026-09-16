@@ -94,7 +94,13 @@ def cleanup():
     Image.objects.filter(request_id__in=submission_ids, is_managed=True).delete()
     SubmissionIdempotency.objects.filter(submission_id__in=submission_ids).delete()
     MediaUploadIntent.objects.filter(submission_id__in=submission_ids).delete()
-    SubmissionLifecycleEvent.objects.filter(submission_id__in=submission_ids).delete()
+    lifecycle_events = SubmissionLifecycleEvent.objects.filter(
+        submission_id__in=submission_ids
+    )
+    # M4 makes audit events immutable through both model and queryset deletion.
+    # This root-only teardown owns these named fixture submissions, so remove
+    # only their events through Django's fixture-oriented raw deletion path.
+    lifecycle_events._raw_delete(using=lifecycle_events.db)
     Request.objects.filter(pk__in=submission_ids).delete()
     Address.objects.filter(pk__in=address_ids).delete()
     print(
