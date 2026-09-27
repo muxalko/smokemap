@@ -21,7 +21,16 @@ services:
     restart: unless-stopped
 
   storage:
-    image: quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
+    # MinIO no longer publishes these releases; docker/minio builds them from
+    # the archived source tag, which must resolve to the pinned commit.
+    image: smokemap-minio:RELEASE.2025-07-23T15-54-02Z
+    pull_policy: build
+    build:
+      context: ./docker/minio
+      target: server
+      args:
+        SERVER_RELEASE: RELEASE.2025-07-23T15-54-02Z
+        SERVER_COMMIT: 7ced9663e6a791fef9dc6be798ff24cda9c730ac
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -40,7 +49,14 @@ services:
     restart: unless-stopped
 
   storage-init:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: smokemap-mc:RELEASE.2025-08-13T08-35-41Z
+    pull_policy: build
+    build:
+      context: ./docker/minio
+      target: client
+      args:
+        CLIENT_RELEASE: RELEASE.2025-08-13T08-35-41Z
+        CLIENT_COMMIT: 7394ce0dd2a80935aded936b09fa12cbb3cb8096
     depends_on:
       storage:
         condition: service_healthy

@@ -53,6 +53,13 @@ waits for backend readiness, and only then starts the frontend and periodic
 media cleanup service. Ports bind to `127.0.0.1` and are not exposed on the
 LAN; media cleanup has no published port.
 
+MinIO archived its open-source server and client and withdrew their images and
+release binaries. `docker/minio/Dockerfile` therefore builds the pinned
+`storage` and `storage-init` releases from their upstream source tags. The build
+verifies each tag's commit and the Go module checksums. The first build takes a
+few minutes and needs access to GitHub and the Go module proxy. Do not switch
+these services back to a registry image without verifying its provenance.
+
 The stack was verified with Docker Engine 28.1.1, Compose v2.35.1, Python 3.12 and Node 22. These container runtimes make development reproducible; they do not make the legacy Django 4.2 or Next.js 13 application dependencies a supported long-term baseline. Framework selection and upgrades remain an explicit roadmap milestone.
 
 The host Docker daemon currently uses `/data/docker-data` with `overlay2`; confirm with:
