@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-09-04
+Last updated: 2026-09-28
 
 Evidence base:
 
@@ -325,12 +325,25 @@ administrator hard deletion, which remains the separate M1 audited operation.
    protection.
 7. Refresh affected UI state after submission and moderation.
 
+### Search scope
+
+The M4 search criteria cover the search and autocomplete surfaces: the bounded
+backend search API and the legacy GraphQL name-autocomplete and name-lookup
+fields. They do not cover the legacy public listings, GraphQL `places` and REST
+`/places/`. Those listings are a separate contract. They are unbounded but
+return only approved places, never submission requests. Backend issue
+`smokemap-django-backend#105` tracks deprecating GraphQL `places` and pinning
+that behavior with tests. The listings may be bounded or removed only after the
+frontend search migration, `smokemap-webapp#10`, has shipped and no supported
+client depends on them.
+
 ### Exit criteria
 
 - partial or concurrent moderation cannot corrupt state;
 - every withdrawal, approval, and rejection action is authorized, auditable,
   and distinct from exceptional M1 audited hard deletion;
-- search never retrieves the full place-name collection;
+- search and autocomplete never retrieve the full place-name collection, as
+  scoped above;
 - results are capped, relevant, and protected from response reordering.
 
 ## 8. M5 — Production readiness
