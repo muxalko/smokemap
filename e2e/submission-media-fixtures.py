@@ -89,11 +89,10 @@ def cleanup():
         storage.delete_object(bucket=intent.storage_bucket, key=intent.object_key)
         storage.delete_object(bucket=intent.storage_bucket, key=intent.sealed_object_key)
 
-    # Deletion order matters: Image.intent and SubmissionIdempotency.media_intent
+    # Deletion order matters: SubmissionLifecycleEvent.idempotency PROTECTs
+    # SubmissionIdempotency, Image.intent and SubmissionIdempotency.media_intent
     # both PROTECT MediaUploadIntent, and Request.address PROTECTs Address.
     Image.objects.filter(request_id__in=submission_ids, is_managed=True).delete()
-    SubmissionIdempotency.objects.filter(submission_id__in=submission_ids).delete()
-    MediaUploadIntent.objects.filter(submission_id__in=submission_ids).delete()
     lifecycle_events = SubmissionLifecycleEvent.objects.filter(
         submission_id__in=submission_ids
     )
@@ -101,6 +100,8 @@ def cleanup():
     # This root-only teardown owns these named fixture submissions, so remove
     # only their events through Django's fixture-oriented raw deletion path.
     lifecycle_events._raw_delete(using=lifecycle_events.db)
+    SubmissionIdempotency.objects.filter(submission_id__in=submission_ids).delete()
+    MediaUploadIntent.objects.filter(submission_id__in=submission_ids).delete()
     Request.objects.filter(pk__in=submission_ids).delete()
     Address.objects.filter(pk__in=address_ids).delete()
     print(
