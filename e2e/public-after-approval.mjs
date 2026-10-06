@@ -409,8 +409,32 @@ async function runLifecycle(browser) {
     { timeout: 30_000 },
     approvedName,
   );
+  const placeResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/smokemap/graphql") &&
+      response.request().method() === "POST" &&
+      response.request().postData()?.includes("GetPlaceById"),
+    { timeout: 30_000 },
+  );
+  const mediaResponsePromise = page.waitForResponse(
+    (response) => response.url().includes("/api/v1/media/"),
+    { timeout: 30_000 },
+  );
   await page.keyboard.press("Enter");
-  await waitForVisibleText(page, approvedName, 30_000);
+  const placePayload = await (await placeResponsePromise).json();
+  const approvedMedia = placePayload.data?.placeById?.media;
+  assert.equal(approvedMedia?.length, 1, "public place detail did not expose one approved rendition");
+  const mediaUrl = new URL(approvedMedia[0].url, baseUrl);
+  assert.equal(
+    mediaUrl.origin,
+    new URL(baseUrl).origin,
+    `public media URL escaped the application origin: ${mediaUrl.origin}`,
+  );
+  assert.match(mediaUrl.pathname, /^\/api\/v1\/media\/[0-9a-f-]+\/$/i);
+  const mediaResponse = await mediaResponsePromise;
+  assert.equal(mediaResponse.url(), mediaUrl.toString(), "browser requested a different media URL");
+  assert.equal(mediaResponse.status(), 200, `approved rendition returned HTTP ${mediaResponse.status()}`);
+  assert.match(mediaResponse.headers()["content-type"] ?? "", /^image\//);
   const imageSelector = `img[alt="${approvedName} view 1"]`;
   await page.waitForFunction(
     (selector) => {
