@@ -16,6 +16,8 @@ services:
       # itself uses to read, seal, or delete objects.
       MEDIA_UPLOAD_ENDPOINT_URL: http://storage:9000
     ports: !reset []
+    volumes:
+      - public-media-e2e-state:/workspace-e2e-state
 
   frontend:
     environment:
@@ -36,8 +38,10 @@ services:
     command: ["e2e/viewport-pan.mjs"]
     environment:
       E2E_BASE_URL: http://frontend:3000
+      SMOKEMAP_E2E_STATE_DIR: /workspace-e2e-state
     volumes:
       - ./e2e:/home/pptruser/e2e:ro
+      - public-media-e2e-state:/workspace-e2e-state
     depends_on:
       frontend:
         condition: service_healthy
@@ -46,3 +50,6 @@ services:
 networks:
   default:
     internal: true
+
+volumes:
+  public-media-e2e-state:
