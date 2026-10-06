@@ -416,10 +416,12 @@ async function runLifecycle(browser) {
       response.request().postData()?.includes("GetPlaceById"),
     { timeout: 30_000 },
   );
-  const mediaResponsePromise = page.waitForResponse(
-    (response) => response.url().includes("/api/v1/media/"),
-    { timeout: 30_000 },
-  );
+  const mediaResponsePromise = page
+    .waitForResponse(
+      (response) => response.url().includes("/api/v1/media/"),
+      { timeout: 30_000 },
+    )
+    .catch((error) => error);
   await page.keyboard.press("Enter");
   const placePayload = await (await placeResponsePromise).json();
   const approvedMedia = placePayload.data?.placeById?.media;
@@ -432,6 +434,7 @@ async function runLifecycle(browser) {
   );
   assert.match(mediaUrl.pathname, /^\/api\/v1\/media\/[0-9a-f-]+\/$/i);
   const mediaResponse = await mediaResponsePromise;
+  if (mediaResponse instanceof Error) throw mediaResponse;
   assert.equal(mediaResponse.url(), mediaUrl.toString(), "browser requested a different media URL");
   assert.equal(mediaResponse.status(), 200, `approved rendition returned HTTP ${mediaResponse.status()}`);
   assert.match(mediaResponse.headers()["content-type"] ?? "", /^image\//);
