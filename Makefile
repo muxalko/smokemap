@@ -118,6 +118,8 @@ test-e2e-public-media:
 	$(E2E_PUBLIC_MEDIA_COMPOSE) up --build --detach --wait \
 		db storage storage-init backend frontend; \
 	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		backend chmod 1777 /workspace-e2e-state; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
 		-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
 		backend python manage.py shell < e2e/public-media-fixtures.py; \
 	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T -e SMOKEMAP_LOCAL_TEST_PASSWORD \
