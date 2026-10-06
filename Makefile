@@ -1,7 +1,8 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media provision-test-users migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media test-e2e-public-media provision-test-users migrate codegen
 
 E2E_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e
 E2E_SUBMISSION_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e-submission-media
+E2E_PUBLIC_MEDIA_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e-public-media
 
 init:
 	git submodule update --init --recursive
@@ -103,6 +104,44 @@ test-e2e-submission-media:
 		-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
 		backend python manage.py shell < e2e/submission-media-fixtures.py; \
 	$(E2E_SUBMISSION_COMPOSE) down --remove-orphans; \
+	trap - EXIT HUP INT TERM
+
+test-e2e-public-media:
+	@set -eu; \
+	cleanup() { \
+		$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+			-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
+			backend python manage.py shell < e2e/public-media-fixtures.py || true; \
+		$(E2E_PUBLIC_MEDIA_COMPOSE) down --remove-orphans; \
+	}; \
+	trap cleanup EXIT HUP INT TERM; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) up --build --detach --wait \
+		db storage storage-init backend frontend; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		backend chmod 1777 /workspace-e2e-state; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
+		backend python manage.py shell < e2e/public-media-fixtures.py; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T -e SMOKEMAP_LOCAL_TEST_PASSWORD \
+		backend python manage.py provision_local_test_users; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) run --rm --no-deps \
+		-e SMOKEMAP_LOCAL_TEST_PASSWORD \
+		-e SMOKEMAP_E2E_PHASE=create \
+		e2e e2e/public-after-approval.mjs; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=verify_pending \
+		backend python manage.py shell < e2e/public-media-fixtures.py; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) run --rm --no-deps \
+		-e SMOKEMAP_LOCAL_TEST_PASSWORD \
+		-e SMOKEMAP_E2E_PHASE=lifecycle \
+		e2e e2e/public-after-approval.mjs; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=verify_final \
+		backend python manage.py shell < e2e/public-media-fixtures.py; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) exec -T \
+		-e SMOKEMAP_E2E_FIXTURE_ACTION=cleanup \
+		backend python manage.py shell < e2e/public-media-fixtures.py; \
+	$(E2E_PUBLIC_MEDIA_COMPOSE) down --remove-orphans; \
 	trap - EXIT HUP INT TERM
 
 provision-test-users:

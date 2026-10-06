@@ -39,6 +39,28 @@ jobs:
       - name: Exercise the real cross-app submission and media E2E
         run: make test-e2e-submission-media
 
+  public-after-approval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Exercise the public-after-approval media lifecycle E2E
+        shell: bash
+        run: |
+          set -o pipefail
+          log_file="$(mktemp)"
+          set +e
+          make test-e2e-public-media 2>&1 | tee "$log_file"
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status != 0 )); then
+            failure_tail="$(tail -n 80 "$log_file" | awk '{gsub(/%/, "%25"); printf "%s%%0A", $0}')"
+            echo "::error title=public-after-approval failure::$failure_tail"
+          fi
+          exit "$status"
+
   secrets:
     runs-on: ubuntu-latest
     steps:
