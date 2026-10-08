@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-09-28
+Last updated: 2026-10-07
 
 Evidence base:
 
@@ -13,6 +13,7 @@ Evidence base:
 - [M2 exit evidence](M2_EXIT_EVIDENCE.md)
 - [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md)
 - [M3 exit evidence](M3_EXIT_EVIDENCE.md)
+- [M4 exit evidence](M4_EXIT_EVIDENCE.md)
 
 ## 1. Planning model
 
@@ -55,8 +56,8 @@ Status values:
 | 1 | M1 — Security and authorization foundation | **Done** | Unsafe public boundaries are closed; credentials remain server-side; the role matrix is enforced and tested |
 | 2 | M2 — Viewport map vertical slice | **Done** | Every settled viewport loads bounded, indexed GeoJSON with deterministic UI states |
 | 3 | M3 — Submission and media vertical slice | **Done** | Validated submissions and zero-or-more verified uploads work end to end |
-| 4 | M4 — Moderation and search | **Current** | Moderation is atomic and auditable; search is bounded and relevant |
-| 5 | M5 — Production readiness | Later | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
+| 4 | M4 — Moderation and search | **Done** | Moderation is atomic and auditable; search is bounded and relevant |
+| 5 | M5 — Production readiness | **Current** | Supported dependencies, CI, deployment controls, observability, migration, and recovery form a releasable baseline |
 
 ## 3. Completed pre-milestone foundation
 
@@ -286,7 +287,15 @@ entry decision; it does not activate M4 withdrawal, approval, or rejection.
 - abandoned objects and intents have a tested exact-key cleanup path whose
   deletion attempt begins within 24 hours of `cleanup_pending`.
 
-## 7. Current milestone — M4 moderation and search
+## 7. Completed milestone — M4 moderation and search
+
+### Exit outcome
+
+Every M4 ordered-work item and exit criterion is demonstrated at merged root
+`ac86d7a`, backend `d9ddb01`, and frontend `d466268`. The complete lifecycle,
+authorization, audit, race, rollback, bounded-search, stale-response,
+public-media, real-browser, CI, and final-audit record is in
+[M4 exit evidence](M4_EXIT_EVIDENCE.md).
 
 ### Activation boundary
 
@@ -346,7 +355,7 @@ client depends on them.
   scoped above;
 - results are capped, relevant, and protected from response reordering.
 
-## 8. M5 — Production readiness
+## 8. Current milestone — M5 production readiness
 
 ### Entry criteria
 
@@ -412,3 +421,5 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-08-30 | M3 | Set to Current | `M3_SUBMISSION_MEDIA_POLICY.md` adopted under root issue `#59`; complete entry policy approved |
 | 2026-09-04 | M3 | Done | All ordered work and exit criteria demonstrated in `M3_EXIT_EVIDENCE.md` at root `c2e5224`, backend `4fe254a`, and frontend `586e56d`; final audit `586885c1c8844109b041d94d0befdc8b` returned `READY_TO_CLOSE_M3` |
 | 2026-09-04 | M4 | Set to Current | M3 exit gate demonstrated; moderation and search vertical slice may begin |
+| 2026-10-07 | M4 | Done | All ordered work and exit criteria demonstrated in `M4_EXIT_EVIDENCE.md` at root `ac86d7a`, backend `d9ddb01`, and frontend `d466268`; final audit `302a3f86d1864c0e941133e24b918e23` returned `READY_TO_CLOSE_M4` |
+| 2026-10-07 | M5 | Set to Current | M4 exit gate demonstrated; production-readiness work may begin |
