@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-10-07
+Last updated: 2026-10-17
 
 Evidence base:
 
@@ -379,6 +379,159 @@ client depends on them.
    `Location` model only after parity is proven.
 9. Decide whether a read-only GraphQL compatibility adapter remains justified.
 
+### Future PoC demo deployment design
+
+Status: planning only; agreed 2026-10-17. This design does not deploy a demo,
+complete an M5 ordered-work item, or demonstrate an M5 exit criterion. The
+supported-version baseline remains separate work in open root issue `#106` and
+PR `#107`; this plan neither supersedes nor closes them. Implementation must be
+split into focused owning-repository and root integration issues in the M5
+order above.
+
+#### Host and network boundary
+
+- Keep the existing Jenkins/HCP development VM and create a separate
+  VirtualBox demo VM on the same physical host. The demo VM is not another
+  role for the development VM and receives no development bind mounts or
+  credentials.
+- Attach an internal-only NIC to both VMs on an isolated subnet, with
+  `172.29.50.0/24` as the example range. Allow deployment SSH to the demo VM
+  only from the Jenkins/HCP VM over that NIC and only through a limited
+  deployment identity. Do not route this subnet to the LAN or Internet.
+- Give the demo VM a separate NAT interface for outbound image pulls, GitHub
+  access, updates, Tailscale, and Cloudflare Tunnel. Configure no hypervisor,
+  router, or host inbound port forwards.
+- Use Tailscale with restricted identities and ACLs for exceptional
+  administration. It is not a public application ingress or an unrestricted
+  deployment path.
+- Run `cloudflared` inside the demo stack and establish outbound-only
+  Cloudflare Tunnel connections. Publish HTTPS for the frontend and a
+  distinct, restricted media hostname needed for browser uploads. No other
+  hostname or direct socket is public.
+
+#### Demo Compose boundary
+
+The future demo-specific Compose definition runs these services on private
+container networks:
+
+- a Next.js frontend produced by a production build and started in production
+  mode;
+- Django served by Gunicorn, with backend authorization remaining
+  authoritative;
+- PostgreSQL with PostGIS;
+- MinIO for media objects;
+- the periodic media-cleanup worker; and
+- `cloudflared` as the only public ingress path.
+
+Only the frontend HTTPS hostname and the restricted media hostname are
+publicly routable through the Tunnel. The backend, database, MinIO console,
+SSH, and container or host management endpoints have no public route. The
+media hostname exposes only the MinIO API surface required for application-
+issued, signed presigned POST uploads; it is not an anonymous bucket or
+console endpoint. MinIO CORS permits the exact demo frontend origin and only
+the required upload methods and headers. Presigned POST policy conditions
+continue to constrain bucket, exact object key, content type, size, expiry,
+and authenticated owner/submission workflow, and Django verifies the stored
+object before attachment under the M3/M4 media contract.
+
+#### Build, release, migration, and recovery
+
+- Preserve the independently deployed frontend and backend repositories.
+  Their GitHub CI gates build and test each application commit before it is
+  eligible for a demo release. Merge application changes in their owning
+  repositories first, then update the root repository's pinned gitlinks in a
+  separate tested integration PR.
+- Build release images from those exact commits, identify every image by an
+  immutable digest, and record a release manifest mapping the root commit,
+  both gitlinks, configuration version, schema state, and image digests. The
+  demo VM pulls digests; it never builds an unreviewed checkout or deploys a
+  floating tag.
+- Require the root GitHub CI integration, browser-workflow, and secret checks
+  at the pinned release commit before deployment. Jenkins uses the restricted
+  internal NIC and a least-privilege deployment identity that can pull the
+  approved release and operate only the demo deployment; it receives neither
+  general administrator access nor application/database secrets outside the
+  minimum deployment interface.
+- Serialize deployments. After a pre-deploy database and media backup, run
+  reviewed Django migrations exactly once as a controlled release step, record
+  their result, start the digest-pinned services, and run smoke tests before
+  declaring the release available. Routine application container startup must
+  not race or independently repeat the migration step.
+- Retain the prior release manifest and image digests. Roll back application
+  services to those digests when the schema remains backward-compatible. If a
+  migration is not backward-compatible, stop and follow its rehearsed reverse
+  migration or restore procedure rather than pretending an image rollback
+  also rolls back data.
+- Back up PostgreSQL and MinIO media together at a documented consistency
+  point, protect and retain the backups outside the demo VM, and rehearse a
+  restore into an isolated target. Recovery evidence must reconcile database
+  image metadata with restored object keys.
+
+An illustrative starting allocation for the demo VM is 4 vCPU, 8 GB RAM, and
+60 GB disk, subject to measured build/runtime headroom and backup growth. The
+incremental subscription estimate is `$0` only while the existing physical
+host, VirtualBox, Jenkins/HCP VM, Tailscale plan, Cloudflare plan, DNS, and
+storage capacity remain available within their current allowances. Usage,
+egress, domain, backup, or capacity changes can introduce cost. Both VMs still
+share one physical host, so host, disk, power, or uplink failure is a known
+single point of failure; this PoC is not a high-availability production design.
+
+#### Future implementation checklist
+
+1. Open focused frontend, backend, and root issues; define the demo hostnames,
+   DNS ownership, secret owners, retention targets, and operator runbook.
+2. Provision the isolated demo VM, internal NIC and example subnet, separate
+   NAT, host firewall, restricted deployment SSH identity, and restricted
+   Tailscale administration; prove there are no port forwards.
+3. Add production frontend and Gunicorn backend images in their owning
+   repositories, pin their base and release images by digest, and pass each
+   repository's GitHub CI and secret gates.
+4. Add the demo Compose and `cloudflared` configuration in the root repository
+   without collapsing application ownership; expose only the two approved
+   Tunnel hostnames and keep database, console, backend, SSH, and management
+   sockets private.
+5. Configure private MinIO buckets, exact-origin CORS, short-lived signed
+   presigned POST policies, cleanup, and end-to-end upload verification.
+6. Implement the release manifest, deployment lock, least-privilege deploy
+   command, one-time migration job, health checks, and post-deploy smoke suite.
+7. Automate coordinated database/media backup and rehearse restore, compatible
+   digest rollback, and the incompatible-schema recovery path.
+8. Measure CPU, memory, disk, backup, and tunnel behavior; revise the example
+   allocation and conditional cost statement before calling the PoC ready.
+
+#### Acceptance gates for a future implementation
+
+- **Isolation:** From an external network, scans and direct connection tests
+  reach only Cloudflare HTTPS; from the LAN and NAT side, SSH, PostgreSQL,
+  MinIO API/console, backend, and management ports are unreachable. Deployment
+  SSH succeeds only from the Jenkins/HCP VM on the internal subnet, and an
+  authorized Tailscale administrator can use only the documented admin path.
+- **Artifact provenance:** A release record maps an immutable root commit and
+  its exact frontend/backend gitlinks to CI-passing image digests. The running
+  containers match those digests and use no floating image tags.
+- **Controlled deployment:** The limited deployment identity completes a
+  serialized deployment without broad host, GitHub, database, or secret-store
+  authority. Migrations run once, are recorded, and fail closed before traffic
+  promotion.
+- **Application and media:** Frontend, liveness/readiness, GraphQL, bounded
+  viewport, search, authentication, submission, moderation, approved media,
+  and cleanup smoke tests pass. A real browser presigned POST succeeds only
+  from the exact allowed origin and within its signed key/type/size/expiry
+  conditions; altered or expired requests and disallowed CORS origins fail.
+- **Exposure:** The frontend and restricted media hostname are the only public
+  routes. The media route cannot reach the MinIO console, list buckets, or
+  perform unsigned writes; backend and storage administration remain private.
+- **Recovery:** A rehearsal restores the paired database/media backup into an
+  isolated target and reconciles metadata/object keys. A compatible release
+  rolls back to the recorded prior image digests, and an incompatible schema
+  follows the rehearsed reverse-or-restore path within documented recovery
+  targets.
+- **Operations and confidentiality:** Resource measurements fit the approved
+  capacity with documented headroom; health, deployment, backup, and Tunnel
+  failures are observable; logs and CI artifacts contain no tokens, sessions,
+  credentials, presigned fields, authorization headers, or secret-bearing
+  environment values.
+
 ### Exit criteria
 
 - clean checkouts pass required CI;
@@ -423,3 +576,4 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-09-04 | M4 | Set to Current | M3 exit gate demonstrated; moderation and search vertical slice may begin |
 | 2026-10-07 | M4 | Done | All ordered work and exit criteria demonstrated in `M4_EXIT_EVIDENCE.md` at root `ac86d7a`, backend `d9ddb01`, and frontend `d466268`; final audit `302a3f86d1864c0e941133e24b918e23` returned `READY_TO_CLOSE_M4` |
 | 2026-10-07 | M5 | Set to Current | M4 exit gate demonstrated; production-readiness work may begin |
+| 2026-10-17 | M5 PoC demo deployment | Future design documented | Root issue `#108`; planning only for an isolated VirtualBox demo VM, restricted outbound-Tunnel exposure, digest-pinned release controls, and rehearsed recovery; no M5 item or exit criterion is complete |
