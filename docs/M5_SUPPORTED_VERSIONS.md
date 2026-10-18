@@ -57,6 +57,11 @@ All lifecycle statements were checked against official upstream sources on
 2026-10-08. Dates are upstream dates; where an upstream policy is intentionally
 approximate, this document does not invent an exact deadline.
 
+Correction dated 2026-10-17: Python 3.15.0rc3 was released on 2026-10-02 and
+was therefore the prerelease current on the 2026-10-08 source-review date;
+Python 3.15.0 final was released on 2026-10-09. The selected Python 3.14 target
+is unchanged because Django 5.2 supports Python through 3.14.
+
 | Component | Current lifecycle | Target lifecycle | Gap and decision |
 | --- | --- | --- | --- |
 | Node.js | 22 is in Maintenance LTS and reaches EOL on 2027-04-30. | 24 is in Active LTS until its scheduled Maintenance transition on 2026-10-20 and reaches EOL on 2028-04-30. | Upgrade 22 to 24 after the Next.js migration passes on Node.js 22. Do not target the non-LTS Node.js 26 Current line. |
@@ -74,8 +79,11 @@ Official sources:
 - Next.js [support policy and supported-version table](https://nextjs.org/support-policy),
   reviewed 2026-10-08; its 16.x table is dated by the 2025-10-21 release.
 - Python [supported-version status table](https://devguide.python.org/versions/),
-  reviewed 2026-10-08; the table records first-release and EOL months for each
-  branch.
+  [3.15.0rc3 release](https://www.python.org/downloads/release/python-3150rc3/),
+  [3.15.0 final release](https://www.python.org/downloads/release/python-3150/),
+  and [PEP 790 release schedule](https://peps.python.org/pep-0790/), reviewed
+  2026-10-08 with the dated correction above; these sources record branch
+  lifecycles and the 3.15 prerelease/final dates.
 - Django [supported-version and release-roadmap table](https://www.djangoproject.com/download/)
   and [Django 5.2 release notes](https://docs.djangoproject.com/en/5.2/releases/5.2/),
   reviewed 2026-10-08; the release notes are dated 2025-04-02.
