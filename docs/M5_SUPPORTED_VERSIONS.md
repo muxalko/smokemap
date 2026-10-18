@@ -86,7 +86,8 @@ Official sources:
   lifecycles and the 3.15 prerelease/final dates.
 - Django [supported-version and release-roadmap table](https://www.djangoproject.com/download/)
   and [Django 5.2 release notes](https://docs.djangoproject.com/en/5.2/releases/5.2/),
-  reviewed 2026-10-08; the release notes are dated 2025-04-02.
+  including the [5.2.8 addition of Python 3.14 support](https://docs.djangoproject.com/en/5.2/releases/5.2.8/),
+  reviewed 2026-10-08; the initial release notes are dated 2025-04-02.
 - PostgreSQL [versioning policy and supported-release table](https://www.postgresql.org/support/versioning/),
   reviewed 2026-10-08; the table records first and final release dates.
 - PostGIS [versioning and EOL policy](https://postgis.net/development/versions_eol/),
