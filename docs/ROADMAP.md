@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 Evidence base:
 
@@ -14,6 +14,7 @@ Evidence base:
 - [M3 submission and media contract](M3_SUBMISSION_MEDIA_POLICY.md)
 - [M3 exit evidence](M3_EXIT_EVIDENCE.md)
 - [M4 exit evidence](M4_EXIT_EVIDENCE.md)
+- [M5 supported-version baseline](M5_SUPPORTED_VERSIONS.md)
 
 ## 1. Planning model
 
@@ -423,3 +424,4 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-09-04 | M4 | Set to Current | M3 exit gate demonstrated; moderation and search vertical slice may begin |
 | 2026-10-07 | M4 | Done | All ordered work and exit criteria demonstrated in `M4_EXIT_EVIDENCE.md` at root `ac86d7a`, backend `d9ddb01`, and frontend `d466268`; final audit `302a3f86d1864c0e941133e24b918e23` returned `READY_TO_CLOSE_M4` |
 | 2026-10-07 | M5 | Set to Current | M4 exit gate demonstrated; production-readiness work may begin |
+| 2026-10-08 | M5 supported versions | Baseline documented | `M5_SUPPORTED_VERSIONS.md`; root issue `#106`; targets Node.js 24, Next.js 16, Python 3.14, Django 5.2 LTS, PostgreSQL 17, and PostGIS 3.6 without performing upgrades |
