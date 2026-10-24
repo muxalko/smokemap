@@ -1,0 +1,305 @@
+name: ${COMPOSE_PROJECT_NAME:?Set a dedicated staging Compose project name}
+
+x-runtime-profile: &runtime-profile
+  profiles: [staging-runtime]
+
+x-backend-environment: &backend-environment
+  SETTINGS_MODE: staging
+  POSTGRES_DB: ${POSTGRES_DB:?Set the staging database name}
+  POSTGRES_USER: ${POSTGRES_USER:?Set the staging database user}
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_OPTIONS: -c search_path=smokemap
+  ALLOWED_HOSTS: backend
+  CORS_ALLOWED_ORIGINS: ${STAGING_APP_URL:?Set the public staging application URL}
+  CSRF_TRUSTED_ORIGINS: ${STAGING_APP_URL:?Set the public staging application URL}
+  AWS_REGION: ${AWS_REGION:?Set the object-storage region}
+  AWS_STORAGE_BUCKET_NAME: ${MINIO_BUCKET:?Set the public media bucket}
+  AWS_S3_ENDPOINT_URL: ${STAGING_MEDIA_URL:?Set the public staging media URL}
+  AWS_S3_ADDRESSING_STYLE: path
+  MEDIA_STORAGE_BUCKET_NAME: ${MINIO_PRIVATE_MEDIA_BUCKET:?Set the private source-media bucket}
+  MEDIA_STORAGE_IDENTIFIER: smokemap-staging-private-media-v1
+  MEDIA_STORAGE_INTERNAL_ENDPOINT_URL: http://storage:9000
+  MEDIA_UPLOAD_ENDPOINT_URL: ${STAGING_MEDIA_URL:?Set the public staging media URL}
+
+x-backend-secrets: &backend-secrets
+  - django_secret_key
+  - postgres_password
+  - storage_access_key
+  - storage_secret_key
+
+x-backend-command: &backend-command
+  - /bin/sh
+  - -ec
+  - |
+    export DJANGO_SECRET_KEY="$$(cat /run/secrets/django_secret_key)"
+    export POSTGRES_PASSWORD="$$(cat /run/secrets/postgres_password)"
+    export AWS_ACCESS_KEY_ID="$$(cat /run/secrets/storage_access_key)"
+    export AWS_SECRET_ACCESS_KEY="$$(cat /run/secrets/storage_secret_key)"
+    exec "$$@"
+  - staging-entrypoint
+
+services:
+  db:
+    <<: *runtime-profile
+    image: ${POSTGIS_IMAGE:?Set an immutable PostGIS image digest}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set the staging database name}
+      POSTGRES_USER: ${POSTGRES_USER:?Set the staging database user}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    configs:
+      - source: postgres_init
+        target: /docker-entrypoint-initdb.d/00-create-smokemap-schema.sql
+    networks:
+      - database
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  storage:
+    <<: *runtime-profile
+    image: ${MINIO_IMAGE:?Set an immutable MinIO image digest}
+    command: [server, /data, --console-address, ":9001"]
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+    secrets:
+      - minio_root_user
+      - minio_root_password
+    volumes:
+      - minio-data:/data
+    networks:
+      - media
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  storage-init:
+    <<: *runtime-profile
+    image: ${MINIO_CLIENT_IMAGE:?Set an immutable MinIO client image digest}
+    depends_on:
+      storage:
+        condition: service_healthy
+    environment:
+      MINIO_BUCKET: ${MINIO_BUCKET:?Set the public media bucket}
+      MINIO_PRIVATE_MEDIA_BUCKET: ${MINIO_PRIVATE_MEDIA_BUCKET:?Set the private source-media bucket}
+      STAGING_APP_URL: ${STAGING_APP_URL:?Set the public staging application URL}
+    secrets:
+      - minio_root_user
+      - minio_root_password
+      - storage_access_key
+      - storage_secret_key
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        root_user="$$(cat /run/secrets/minio_root_user)"
+        root_password="$$(cat /run/secrets/minio_root_password)"
+        storage_access_key="$$(cat /run/secrets/storage_access_key)"
+        storage_secret_key="$$(cat /run/secrets/storage_secret_key)"
+        test "$${MINIO_BUCKET}" != "$${MINIO_PRIVATE_MEDIA_BUCKET}"
+        mc alias set local http://storage:9000 "$${root_user}" "$${root_password}"
+        mc mb --ignore-existing "local/$${MINIO_BUCKET}"
+        mc anonymous set download "local/$${MINIO_BUCKET}"
+        mc mb --ignore-existing "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
+        mc anonymous set private "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
+        mc admin user add local "$${storage_access_key}" "$${storage_secret_key}"
+        policy_file="$$(mktemp)"
+        cors_file="$$(mktemp)"
+        trap 'rm -f "$${policy_file}" "$${cors_file}"' EXIT
+        cat >"$${policy_file}" <<POLICY
+        {"Version":"2012-10-17","Statement":[
+          {"Effect":"Allow","Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::$${MINIO_BUCKET}","arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}"]},
+          {"Effect":"Allow","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::$${MINIO_BUCKET}/*","arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}/*"]},
+          {"Effect":"Allow","Action":["s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}/*"]}
+        ]}
+        POLICY
+        mc admin policy create local smokemap-staging "$${policy_file}"
+        mc admin policy attach local smokemap-staging --user "$${storage_access_key}"
+        cat >"$${cors_file}" <<CORS
+        <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+          <CORSRule>
+            <AllowedOrigin>$${STAGING_APP_URL}</AllowedOrigin>
+            <AllowedMethod>GET</AllowedMethod>
+            <AllowedMethod>HEAD</AllowedMethod>
+            <AllowedMethod>POST</AllowedMethod>
+            <AllowedHeader>*</AllowedHeader>
+            <ExposeHeader>ETag</ExposeHeader>
+            <MaxAgeSeconds>3600</MaxAgeSeconds>
+          </CORSRule>
+        </CORSConfiguration>
+        CORS
+        mc cors set "local/$${MINIO_PRIVATE_MEDIA_BUCKET}" "$${cors_file}"
+    networks:
+      - media
+    restart: "no"
+
+  migrate:
+    image: ${BACKEND_IMAGE:?Set an immutable backend image digest}
+    profiles: [staging-migration]
+    entrypoint: *backend-command
+    command: [python, manage.py, migrate, --noinput]
+    environment: *backend-environment
+    secrets: *backend-secrets
+    networks:
+      - database
+      - application
+      - media
+    depends_on:
+      db:
+        condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  backend:
+    <<: *runtime-profile
+    image: ${BACKEND_IMAGE:?Set an immutable backend image digest}
+    entrypoint: *backend-command
+    command: [gunicorn, smokemap.wsgi:app, --bind, 0.0.0.0:8000, --access-logfile, -, --error-logfile, -]
+    environment: *backend-environment
+    secrets: *backend-secrets
+    networks:
+      - database
+      - application
+      - media
+    depends_on:
+      db:
+        condition: service_healthy
+      storage-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://localhost:8000/health/ready/', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  media-cleanup:
+    <<: *runtime-profile
+    image: ${BACKEND_IMAGE:?Set an immutable backend image digest}
+    entrypoint: *backend-command
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        case "$${MEDIA_CLEANUP_BATCH_SIZE}" in ''|*[!0-9]*|0) exit 64 ;; esac
+        case "$${MEDIA_CLEANUP_INTERVAL_SECONDS}" in ''|*[!0-9]*|0) exit 64 ;; esac
+        while true; do
+          python manage.py process_media_cleanup --batch-size "$${MEDIA_CLEANUP_BATCH_SIZE}" || true
+          sleep "$${MEDIA_CLEANUP_INTERVAL_SECONDS}"
+        done
+    environment:
+      <<: *backend-environment
+      MEDIA_CLEANUP_BATCH_SIZE: ${MEDIA_CLEANUP_BATCH_SIZE:?Set a positive cleanup batch size}
+      MEDIA_CLEANUP_INTERVAL_SECONDS: ${MEDIA_CLEANUP_INTERVAL_SECONDS:?Set a positive cleanup interval}
+    secrets: *backend-secrets
+    networks:
+      - database
+      - media
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    <<: *runtime-profile
+    image: ${FRONTEND_IMAGE:?Set an immutable frontend image digest}
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_ENVIRONMENT: staging
+      NEXT_PUBLIC_VERSION: ${RELEASE_VERSION:?Set the immutable release identifier}
+      NEXT_PUBLIC_BASE_URL: ${STAGING_APP_URL:?Set the public staging application URL}
+      NEXT_PUBLIC_BACKEND: /api/smokemap
+      NEXT_PUBLIC_GRAPHQL_ENDPOINT: /api/smokemap/graphql
+      NEXT_PUBLIC_FEATURESERV_ENDPOINT: /api/smokemap/locations
+      NEXT_PUBLIC_MAP_STYLE: ${NEXT_PUBLIC_MAP_STYLE:?Set the public map style URL}
+      NEXT_PUBLIC_LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      NEXTAUTH_URL: ${STAGING_APP_URL:?Set the public staging application URL}
+      BACKEND_INTERNAL_URL: http://backend:8000
+      GRAPHQL_INTERNAL_ENDPOINT: http://backend:8000/graphql/
+    secrets:
+      - nextauth_secret
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        export NEXTAUTH_SECRET="$$(cat /run/secrets/nextauth_secret)"
+        exec yarn start --hostname 0.0.0.0 --port 3000
+    networks:
+      - application
+      - edge
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  cloudflared:
+    <<: *runtime-profile
+    image: ${CLOUDFLARED_IMAGE:?Set an immutable cloudflared image digest}
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/cloudflared_token]
+    secrets:
+      - cloudflared_token
+    networks:
+      - edge
+      - media
+    depends_on:
+      frontend:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    restart: unless-stopped
+
+secrets:
+  cloudflared_token:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/cloudflared_token
+  django_secret_key:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/django_secret_key
+  minio_root_password:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/minio_root_password
+  minio_root_user:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/minio_root_user
+  nextauth_secret:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/nextauth_secret
+  postgres_password:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/postgres_password
+  storage_access_key:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/storage_access_key
+  storage_secret_key:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/storage_secret_key
+
+configs:
+  postgres_init:
+    file: ../../docker/postgres/init/00-create-smokemap-schema.sql
+
+volumes:
+  minio-data:
+  postgres-data:
+
+networks:
+  application:
+    internal: true
+  database:
+    internal: true
+  edge:
+  media:
+    internal: true
