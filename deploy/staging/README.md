@@ -11,9 +11,11 @@ creates containers, runs migrations, changes Cloudflare, or starts services.
 - The independently deployed frontend and backend repositories own their
   images. A release must record each owning commit and CI result; a root
   gitlink remains only the tested integration baseline.
-- Database, application, and media networks are internal. Only `cloudflared`
-  has outbound connectivity; no service publishes a host port, including
-  PostgreSQL, the backend, MinIO API, and the MinIO console.
+- Database, application, media, and the two tunnel-ingress networks are
+  internal. A separate edge network gives only `cloudflared` outbound
+  connectivity, while the tunnel can reach only the frontend and storage
+  services. No service publishes a host port, including PostgreSQL, the
+  backend, MinIO API, and the MinIO console.
 - The remotely managed tunnel token is file-backed and scoped to one tunnel.
   Cloudflare must route only the application hostname to `frontend:3000` and
   the distinct upload hostname to `storage:9000`. No route may target the

@@ -158,7 +158,7 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
             fail(f"{name} must remain behind the explicit staging-runtime profile")
 
     networks = config.get("networks", {})
-    for name in ("application", "database", "media"):
+    for name in ("application", "database", "ingress", "media", "media-ingress"):
         if not networks.get(name, {}).get("internal"):
             fail(f"{name} network must remain internal")
     if networks.get("edge", {}).get("internal"):
@@ -166,13 +166,13 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
 
     expected_networks = {
         "db": {"database"},
-        "storage": {"media"},
+        "storage": {"media", "media-ingress"},
         "storage-init": {"media"},
         "migrate": {"application", "database", "media"},
         "backend": {"application", "database", "media"},
         "media-cleanup": {"database", "media"},
-        "frontend": {"application", "edge"},
-        "cloudflared": {"edge", "media"},
+        "frontend": {"application", "ingress"},
+        "cloudflared": {"edge", "ingress", "media-ingress"},
     }
     for service_name, wanted in expected_networks.items():
         if set(services[service_name].get("networks", {})) != wanted:
@@ -247,6 +247,12 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
     validate_permissions(secret_directories.pop(), 0o700, "staging secret directory")
 
 
+def resolve_release_env_file(env_file: Path) -> Path:
+    if not env_file.is_absolute():
+        fail("STAGING_ENV_FILE must be an absolute path")
+    return env_file.resolve()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="validate the staging Compose contract without starting runtime"
@@ -259,8 +265,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    env_file = TEMPLATE_FILE if args.template else args.env_file.resolve()
     try:
+        env_file = (
+            TEMPLATE_FILE
+            if args.template
+            else resolve_release_env_file(args.env_file)
+        )
         config = render(env_file)
         validate_structure(config, allow_placeholders=args.template)
         if not args.template:

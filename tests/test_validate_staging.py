@@ -54,6 +54,28 @@ class StagingStructureTests(unittest.TestCase):
         ):
             validate_staging.validate_structure(config, allow_placeholders=True)
 
+    def test_frontend_outbound_edge_network_is_rejected(self) -> None:
+        config = copy.deepcopy(self.config)
+        config["services"]["frontend"]["networks"]["edge"] = None
+
+        with self.assertRaisesRegex(
+            validate_staging.ValidationError,
+            "frontend network reachability changed",
+        ):
+            validate_staging.validate_structure(config, allow_placeholders=True)
+
+    def test_tunnel_backend_media_network_is_rejected(self) -> None:
+        config = copy.deepcopy(self.config)
+        networks = config["services"]["cloudflared"]["networks"]
+        networks.pop("media-ingress")
+        networks["media"] = None
+
+        with self.assertRaisesRegex(
+            validate_staging.ValidationError,
+            "cloudflared network reachability changed",
+        ):
+            validate_staging.validate_structure(config, allow_placeholders=True)
+
 
 class StagingReleaseInputTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -82,6 +104,13 @@ class StagingReleaseInputTests(unittest.TestCase):
 
     def test_secure_external_inputs_are_accepted(self) -> None:
         validate_staging.validate_release_inputs(self.config, self.env_file)
+
+    def test_relative_environment_file_is_rejected(self) -> None:
+        with self.assertRaisesRegex(
+            validate_staging.ValidationError,
+            "STAGING_ENV_FILE must be an absolute path",
+        ):
+            validate_staging.resolve_release_env_file(Path("staging.env"))
 
     def test_permissive_secret_is_rejected(self) -> None:
         secret_file = Path(self.config["secrets"]["django_secret_key"]["file"])

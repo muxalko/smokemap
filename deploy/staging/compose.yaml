@@ -78,6 +78,7 @@ services:
       - minio-data:/data
     networks:
       - media
+      - media-ingress
     healthcheck:
       test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
       interval: 10s
@@ -241,7 +242,7 @@ services:
         exec yarn start --hostname 0.0.0.0 --port 3000
     networks:
       - application
-      - edge
+      - ingress
     depends_on:
       backend:
         condition: service_healthy
@@ -261,7 +262,8 @@ services:
       - cloudflared_token
     networks:
       - edge
-      - media
+      - ingress
+      - media-ingress
     depends_on:
       frontend:
         condition: service_healthy
@@ -301,5 +303,9 @@ networks:
   database:
     internal: true
   edge:
+  ingress:
+    internal: true
   media:
+    internal: true
+  media-ingress:
     internal: true
