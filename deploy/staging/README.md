@@ -15,7 +15,8 @@ creates containers, runs migrations, changes Cloudflare, or starts services.
   internal. A separate edge network gives only `cloudflared` outbound
   connectivity, while the tunnel can reach only the frontend and storage
   services. No service publishes a host port, including PostgreSQL, the
-  backend, MinIO API, and the MinIO console.
+  backend, or MinIO API. The MinIO browser console is disabled and has no
+  listener for the tunnel to reach.
 - The remotely managed tunnel token is file-backed and scoped to one tunnel.
   Cloudflare must route only the application hostname to `frontend:3000` and
   the distinct upload hostname to `storage:9000`. No route may target the
@@ -41,10 +42,15 @@ created by this repository.
    `0600`, replace all `example.invalid` image references with immutable
    digest references produced by the owning repositories, and use the exact
    public staging origins.
-2. Create the absolute `STAGING_SECRETS_DIR` with mode `0700`. Create each
-   named secret file from the Compose `secrets` section with mode `0600`,
-   owned by the deployment identity. Values must be independent of local,
-   CI, and production credentials.
+2. Create a dedicated host group for staging secret readers and set its
+   numeric GID as `STAGING_SECRET_GID`. Create the absolute
+   `STAGING_SECRETS_DIR` owned by the deployment identity and that group with
+   mode `0750`. Create each named secret file from the Compose `secrets`
+   section with the same ownership and mode `0640`. Compose bind-mounts
+   file-backed secrets without remapping ownership; `group_add` therefore
+   gives non-root image users read access without making the host files
+   world-readable. Values must be independent of local, CI, and production
+   credentials.
 3. Configure a remotely managed Cloudflare Tunnel and exact hostname routes
    separately. Apply the intended Cloudflare Access policy before any runtime
    launch, and verify that the upload hostname can complete the browser's
@@ -57,10 +63,11 @@ created by this repository.
    ```
 
 The preflight renders Compose and validates image immutability, explicit
-profiles, service/network isolation, secret ownership and modes, distinct
-buckets and HTTPS origins, production commands, and the absence of published
-ports. It intentionally does not verify that registry images exist or pull
-them.
+profiles, service/network isolation, group-readable secret ownership and
+modes, distinct buckets and HTTPS origins, exact MinIO API CORS, a disabled
+MinIO console, production commands, and the absence of published ports or
+privilege and bind-mount escape paths. It intentionally does not verify that
+registry images exist or pull them.
 
 ## Launch blockers at the pinned revisions
 

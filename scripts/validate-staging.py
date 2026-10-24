@@ -37,6 +37,15 @@ EXPECTED_SECRETS = {
     "storage_access_key",
     "storage_secret_key",
 }
+EXPECTED_VOLUMES = {"minio-data", "postgres-data"}
+EXPECTED_NETWORKS = {
+    "application",
+    "database",
+    "edge",
+    "ingress",
+    "media",
+    "media-ingress",
+}
 IMMUTABLE_IMAGE = re.compile(r"^[^\s:@]+(?:/[^\s:@]+)+@sha256:[0-9a-f]{64}$")
 PLACEHOLDER_DIGEST = "0" * 64
 
@@ -49,7 +58,9 @@ def fail(message: str) -> None:
     raise ValidationError(message)
 
 
-def render(env_file: Path) -> dict:
+def compose_config(
+    env_file: Path, compose_file: Path, *, extra_args: tuple[str, ...] = ()
+) -> dict:
     result = subprocess.run(
         [
             "docker",
@@ -57,12 +68,13 @@ def render(env_file: Path) -> dict:
             "--env-file",
             str(env_file),
             "-f",
-            str(COMPOSE_FILE),
+            str(compose_file),
             "--profile",
             "staging-runtime",
             "--profile",
             "staging-migration",
             "config",
+            *extra_args,
             "--format",
             "json",
         ],
@@ -75,6 +87,18 @@ def render(env_file: Path) -> dict:
         detail = result.stderr.strip() or result.stdout.strip()
         fail(f"Docker Compose could not render the staging contract: {detail}")
     return json.loads(result.stdout)
+
+
+def render(env_file: Path, *, compose_file: Path = COMPOSE_FILE) -> dict:
+    source_config = compose_config(
+        env_file,
+        compose_file,
+        extra_args=("--no-interpolate", "--no-normalize", "--no-env-resolution"),
+    )
+    for name, service in source_config.get("services", {}).items():
+        if service.get("env_file"):
+            fail(f"{name} must not load an unreviewed environment file")
+    return compose_config(env_file, compose_file)
 
 
 def require_https_origin(value: str, label: str) -> str:
@@ -102,6 +126,20 @@ def command_text(service: dict) -> str:
     if isinstance(command, str):
         command = [command]
     return " ".join([*entrypoint, *command])
+
+
+def secret_group_id(services: dict) -> int:
+    groups = {
+        tuple(str(group) for group in service.get("group_add", []))
+        for service in services.values()
+        if service.get("secrets")
+    }
+    if len(groups) != 1:
+        fail("secret-consuming services must share one explicit supplemental group")
+    group = next(iter(groups))
+    if len(group) != 1 or not group[0].isdigit() or int(group[0]) == 0:
+        fail("staging secret access must use one positive numeric supplemental group")
+    return int(group[0])
 
 
 def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
@@ -139,6 +177,14 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
             fail(f"{name} still uses a placeholder image")
         if service.get("ports") or service.get("expose"):
             fail(f"{name} must not publish or expose a port")
+        if service.get("privileged"):
+            fail(f"{name} must not run privileged")
+        if service.get("cap_add"):
+            fail(f"{name} must not add Linux capabilities")
+        if service.get("pid"):
+            fail(f"{name} must not join another PID namespace")
+        if service.get("env_file"):
+            fail(f"{name} must not load an unreviewed environment file")
         for mount in service.get("volumes", []):
             if mount.get("type") == "bind":
                 fail(f"{name} contains an unexpected host bind mount")
@@ -151,6 +197,8 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
             if forbidden in lowered:
                 fail(f"{name} contains forbidden development command: {forbidden}")
 
+    secret_group_id(services)
+
     if services["migrate"].get("profiles") != ["staging-migration"]:
         fail("migration must remain an explicitly selected one-shot profile")
     for name in EXPECTED_SERVICES - {"migrate"}:
@@ -158,11 +206,20 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
             fail(f"{name} must remain behind the explicit staging-runtime profile")
 
     networks = config.get("networks", {})
+    if set(networks) != EXPECTED_NETWORKS:
+        fail("staging networks differ from the reviewed topology")
     for name in ("application", "database", "ingress", "media", "media-ingress"):
         if not networks.get(name, {}).get("internal"):
             fail(f"{name} network must remain internal")
     if networks.get("edge", {}).get("internal"):
         fail("edge network must permit the tunnel's outbound connection")
+
+    volumes = config.get("volumes", {})
+    if set(volumes) != EXPECTED_VOLUMES:
+        fail("staging volumes differ from the reviewed named-volume set")
+    for name, volume in volumes.items():
+        if volume.get("driver_opts"):
+            fail(f"{name} must not use driver options that can create a host bind mount")
 
     expected_networks = {
         "db": {"database"},
@@ -193,13 +250,32 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
     if backend_env.get("AWS_STORAGE_BUCKET_NAME") == backend_env.get("MEDIA_STORAGE_BUCKET_NAME"):
         fail("public and private media buckets must be distinct")
 
+    storage = services["storage"]
+    storage_env = storage.get("environment", {})
+    if storage_env.get("MINIO_API_CORS_ALLOW_ORIGIN") != backend_env.get(
+        "CORS_ALLOWED_ORIGINS"
+    ):
+        fail("MinIO API CORS must match the exact staging application origin")
+    if storage_env.get("MINIO_BROWSER") != "off" or "--console-address" in command_text(storage):
+        fail("the MinIO browser console must remain disabled")
+    if "mc cors" in command_text(services["storage-init"]).lower():
+        fail("storage initialization must not call the unsupported mc cors command")
+
+    backend_healthcheck = " ".join(
+        services["backend"].get("healthcheck", {}).get("test", [])
+    )
+    if "http://backend:8000/health/ready/" not in backend_healthcheck:
+        fail("backend readiness must use an allowed Host header")
+
     if "gunicorn" not in command_text(services["backend"]):
         fail("backend must use the production WSGI server contract")
     if "yarn start" not in command_text(services["frontend"]):
         fail("frontend must use the production server contract")
 
 
-def validate_permissions(path: Path, expected_mode: int, label: str) -> None:
+def validate_permissions(
+    path: Path, expected_mode: int, label: str, *, expected_gid: int | None = None
+) -> None:
     if path.is_symlink():
         fail(f"{label} must not be a symbolic link: {path}")
     try:
@@ -211,6 +287,8 @@ def validate_permissions(path: Path, expected_mode: int, label: str) -> None:
         fail(f"{label} must have mode {expected_mode:04o}, found {actual_mode:04o}: {path}")
     if metadata.st_uid != os.geteuid():
         fail(f"{label} must be owned by the deployment identity: {path}")
+    if expected_gid is not None and metadata.st_gid != expected_gid:
+        fail(f"{label} must be group-owned by GID {expected_gid}: {path}")
 
 
 def validate_release_inputs(config: dict, env_file: Path) -> None:
@@ -218,14 +296,14 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
         fail("STAGING_ENV_FILE must be an absolute path")
     if ROOT in env_file.parents:
         fail("the staging environment file must remain outside the repository")
-    validate_permissions(env_file, 0o600, "staging environment file")
     if not env_file.is_file():
         fail(f"staging environment file must be a regular file: {env_file}")
+    validate_permissions(env_file, 0o600, "staging environment file")
     for line in env_file.read_text(encoding="utf-8").splitlines():
         key, separator, _ = line.strip().partition("=")
         if (
             separator
-            and key != "STAGING_SECRETS_DIR"
+            and key not in {"STAGING_SECRETS_DIR", "STAGING_SECRET_GID"}
             and any(
                 marker in key.upper()
                 for marker in ("PASSWORD", "SECRET", "TOKEN", "ACCESS_KEY")
@@ -233,22 +311,33 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
         ):
             fail("the staging environment file must contain secret paths, never secret values")
 
+    expected_gid = secret_group_id(config["services"])
     secret_paths = []
     for name, secret in config["secrets"].items():
         source = Path(secret.get("file", ""))
         if not source.is_absolute():
             fail(f"{name} secret source must be an absolute path")
         secret_paths.append(source)
-        validate_permissions(source, 0o600, f"{name} secret")
         if not source.is_file():
             fail(f"{name} secret must be a regular file: {source}")
+        validate_permissions(
+            source, 0o640, f"{name} secret", expected_gid=expected_gid
+        )
         if source.stat().st_size == 0:
             fail(f"{name} secret must not be empty")
 
     secret_directories = {path.parent for path in secret_paths}
     if len(secret_directories) != 1:
         fail("all staging secret files must come from one isolated directory")
-    validate_permissions(secret_directories.pop(), 0o700, "staging secret directory")
+    secret_directory = secret_directories.pop()
+    if not secret_directory.is_dir():
+        fail(f"staging secret directory must be a directory: {secret_directory}")
+    validate_permissions(
+        secret_directory,
+        0o750,
+        "staging secret directory",
+        expected_gid=expected_gid,
+    )
 
 
 def resolve_release_env_file(env_file: Path) -> Path:

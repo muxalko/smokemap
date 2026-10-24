@@ -3,6 +3,9 @@ name: ${COMPOSE_PROJECT_NAME:?Set a dedicated staging Compose project name}
 x-runtime-profile: &runtime-profile
   profiles: [staging-runtime]
 
+x-secret-groups: &secret-groups
+  - ${STAGING_SECRET_GID:?Set the numeric group allowed to read staging secrets}
+
 x-backend-environment: &backend-environment
   SETTINGS_MODE: staging
   POSTGRES_DB: ${POSTGRES_DB:?Set the staging database name}
@@ -49,6 +52,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_password
+    group_add: *secret-groups
     volumes:
       - postgres-data:/var/lib/postgresql/data
     configs:
@@ -67,13 +71,16 @@ services:
   storage:
     <<: *runtime-profile
     image: ${MINIO_IMAGE:?Set an immutable MinIO image digest}
-    command: [server, /data, --console-address, ":9001"]
+    command: [server, /data]
     environment:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+      MINIO_API_CORS_ALLOW_ORIGIN: ${STAGING_APP_URL:?Set the public staging application URL}
+      MINIO_BROWSER: "off"
     secrets:
       - minio_root_user
       - minio_root_password
+    group_add: *secret-groups
     volumes:
       - minio-data:/data
     networks:
@@ -96,12 +103,12 @@ services:
     environment:
       MINIO_BUCKET: ${MINIO_BUCKET:?Set the public media bucket}
       MINIO_PRIVATE_MEDIA_BUCKET: ${MINIO_PRIVATE_MEDIA_BUCKET:?Set the private source-media bucket}
-      STAGING_APP_URL: ${STAGING_APP_URL:?Set the public staging application URL}
     secrets:
       - minio_root_user
       - minio_root_password
       - storage_access_key
       - storage_secret_key
+    group_add: *secret-groups
     entrypoint: [/bin/sh, -ec]
     command:
       - |
@@ -117,8 +124,7 @@ services:
         mc anonymous set private "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
         mc admin user add local "$${storage_access_key}" "$${storage_secret_key}"
         policy_file="$$(mktemp)"
-        cors_file="$$(mktemp)"
-        trap 'rm -f "$${policy_file}" "$${cors_file}"' EXIT
+        trap 'rm -f "$${policy_file}"' EXIT
         cat >"$${policy_file}" <<POLICY
         {"Version":"2012-10-17","Statement":[
           {"Effect":"Allow","Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::$${MINIO_BUCKET}","arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}"]},
@@ -128,20 +134,6 @@ services:
         POLICY
         mc admin policy create local smokemap-staging "$${policy_file}"
         mc admin policy attach local smokemap-staging --user "$${storage_access_key}"
-        cat >"$${cors_file}" <<CORS
-        <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-          <CORSRule>
-            <AllowedOrigin>$${STAGING_APP_URL}</AllowedOrigin>
-            <AllowedMethod>GET</AllowedMethod>
-            <AllowedMethod>HEAD</AllowedMethod>
-            <AllowedMethod>POST</AllowedMethod>
-            <AllowedHeader>*</AllowedHeader>
-            <ExposeHeader>ETag</ExposeHeader>
-            <MaxAgeSeconds>3600</MaxAgeSeconds>
-          </CORSRule>
-        </CORSConfiguration>
-        CORS
-        mc cors set "local/$${MINIO_PRIVATE_MEDIA_BUCKET}" "$${cors_file}"
     networks:
       - media
     restart: "no"
@@ -153,6 +145,7 @@ services:
     command: [python, manage.py, migrate, --noinput]
     environment: *backend-environment
     secrets: *backend-secrets
+    group_add: *secret-groups
     networks:
       - database
       - application
@@ -171,6 +164,7 @@ services:
     command: [gunicorn, smokemap.wsgi:app, --bind, 0.0.0.0:8000, --access-logfile, -, --error-logfile, -]
     environment: *backend-environment
     secrets: *backend-secrets
+    group_add: *secret-groups
     networks:
       - database
       - application
@@ -181,7 +175,7 @@ services:
       storage-init:
         condition: service_completed_successfully
     healthcheck:
-      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://localhost:8000/health/ready/', timeout=2)"]
+      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://backend:8000/health/ready/', timeout=2)"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -207,6 +201,7 @@ services:
       MEDIA_CLEANUP_BATCH_SIZE: ${MEDIA_CLEANUP_BATCH_SIZE:?Set a positive cleanup batch size}
       MEDIA_CLEANUP_INTERVAL_SECONDS: ${MEDIA_CLEANUP_INTERVAL_SECONDS:?Set a positive cleanup interval}
     secrets: *backend-secrets
+    group_add: *secret-groups
     networks:
       - database
       - media
@@ -235,6 +230,7 @@ services:
       GRAPHQL_INTERNAL_ENDPOINT: http://backend:8000/graphql/
     secrets:
       - nextauth_secret
+    group_add: *secret-groups
     entrypoint: [/bin/sh, -ec]
     command:
       - |
@@ -260,6 +256,7 @@ services:
     command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/cloudflared_token]
     secrets:
       - cloudflared_token
+    group_add: *secret-groups
     networks:
       - edge
       - ingress
