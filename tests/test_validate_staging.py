@@ -122,6 +122,17 @@ class StagingReleaseInputTests(unittest.TestCase):
         ):
             validate_staging.validate_release_inputs(self.config, self.env_file)
 
+    def test_secret_directory_is_rejected(self) -> None:
+        secret_file = Path(self.config["secrets"]["django_secret_key"]["file"])
+        secret_file.unlink()
+        secret_file.mkdir(mode=0o600)
+
+        with self.assertRaisesRegex(
+            validate_staging.ValidationError,
+            "django_secret_key secret must be a regular file",
+        ):
+            validate_staging.validate_release_inputs(self.config, self.env_file)
+
     def test_secret_value_in_environment_file_is_rejected(self) -> None:
         self.env_file.write_text("NEXTAUTH_SECRET=unsafe\n", encoding="utf-8")
 

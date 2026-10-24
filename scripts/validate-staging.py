@@ -219,6 +219,8 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
     if ROOT in env_file.parents:
         fail("the staging environment file must remain outside the repository")
     validate_permissions(env_file, 0o600, "staging environment file")
+    if not env_file.is_file():
+        fail(f"staging environment file must be a regular file: {env_file}")
     for line in env_file.read_text(encoding="utf-8").splitlines():
         key, separator, _ = line.strip().partition("=")
         if (
@@ -238,6 +240,8 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
             fail(f"{name} secret source must be an absolute path")
         secret_paths.append(source)
         validate_permissions(source, 0o600, f"{name} secret")
+        if not source.is_file():
+            fail(f"{name} secret must be a regular file: {source}")
         if source.stat().st_size == 0:
             fail(f"{name} secret must not be empty")
 
