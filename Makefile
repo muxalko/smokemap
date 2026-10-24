@@ -1,4 +1,4 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media test-e2e-public-media provision-test-users migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-staging staging-preflight check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media test-e2e-public-media provision-test-users migrate codegen
 
 E2E_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e
 E2E_SUBMISSION_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e-submission-media
@@ -40,6 +40,17 @@ check: check-compose check-backend check-frontend
 
 check-compose:
 	./scripts/validate-compose.sh
+
+check-staging:
+	python3 scripts/validate-staging.py --template
+	python3 -m unittest discover -s tests -p 'test_validate_staging.py' -v
+
+staging-preflight:
+	@test -n "$(STAGING_ENV_FILE)" || { \
+		echo "Set STAGING_ENV_FILE to the absolute path of the staging environment file." >&2; \
+		exit 64; \
+	}
+	python3 scripts/validate-staging.py --env-file "$(STAGING_ENV_FILE)"
 
 check-backend:
 	docker compose exec -T backend python manage.py check

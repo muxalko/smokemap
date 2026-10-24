@@ -18,6 +18,7 @@ jobs:
           submodules: recursive
       - run: git submodule status
       - run: make check-compose
+      - run: make check-staging
 
   viewport-pan:
     runs-on: ubuntu-latest
