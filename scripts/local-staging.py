@@ -913,7 +913,8 @@ def smoke_checks(settings: dict, context: ssl.SSLContext):
 
     def check_json(status, body, predicate):
         try:
-            return status == 200 and predicate(json.loads(body))
+            data = json.loads(body)
+            return status == 200 and isinstance(data, dict) and predicate(data)
         except ValueError:
             return False
 
@@ -926,9 +927,10 @@ def smoke_checks(settings: dict, context: ssl.SSLContext):
     yield "GraphQL through the same-origin proxy", check_json(
         status, body, lambda data: data.get("data", {}).get("__typename") == "Query"
     ), status
-    status, _, body = call(app, "GET", f"/api/smokemap/locations?in_bbox={SMOKE_BBOX}")
+    status, _, body = call(app, "GET", f"/api/smokemap/locations?bbox={SMOKE_BBOX}&zoom=12")
     yield "bounded viewport GeoJSON", check_json(
         status, body, lambda data: data.get("type") == "FeatureCollection"
+        and isinstance(data.get("features"), list)
     ), status
     status, headers, _ = call(app, "GET", "/minio/health/live")
     yield "application origin never serves MinIO", not from_minio(headers), status
