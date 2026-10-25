@@ -146,6 +146,53 @@ class OriginsAndIsolation(unittest.TestCase):
             api.resolve_home(str(ROOT / "quick-home"))
 
 
+class PublicSmoke(unittest.TestCase):
+    def run_smoke(self, cors_response, *, succeeds):
+        responses = [
+            (200, {}, b""),
+            (200, {}, b'{"data":{"__typename":"Query"}}'),
+            (200, {}, b'{"type":"FeatureCollection","features":[]}'),
+            (200, {}, json.dumps({"credentials": {"callbackUrl": ORIGINS[0] + "/api/auth/callback/credentials"}}).encode()),
+            (200, {}, b""),
+            *[(403, {"server": "MinIO"}, b"")] * 3,
+            *[(403, {}, b"")] * 5,
+            cors_response,
+        ]
+        output = io.StringIO()
+        with mock.patch.object(operator, "preflight", return_value=(SETTINGS, RELEASE_ENV, MANIFEST, CONFIG)), mock.patch.object(api, "require_migrated"), mock.patch.object(operator, "require_supervisor"), mock.patch.object(operator, "public_request", side_effect=responses) as request, contextlib.redirect_stdout(output):
+            if succeeds:
+                operator.command_smoke(HOME)
+            else:
+                with self.assertRaisesRegex(quick.ValidationError, "quick public smoke failed"):
+                    operator.command_smoke(HOME)
+        self.assertEqual(request.call_count, 14)
+        request.assert_called_with(
+            ORIGINS[1], "OPTIONS", f"/{SETTINGS['MINIO_PRIVATE_MEDIA_BUCKET']}/quick-smoke-probe",
+            headers={"Origin": ORIGINS[0], "Access-Control-Request-Method": "POST"},
+        )
+        self.assertEqual(output.getvalue().splitlines(), [
+            "PASS application", "PASS GraphQL", "PASS viewport", "PASS auth callback origin", "PASS media health",
+            *["PASS media backend separation"] * 3,
+            *["PASS anonymous listing", "PASS unsigned write"] * 2,
+            "PASS private read", f"{'PASS' if succeeds else 'FAIL'} CORS",
+        ])
+
+    def test_cors_accepts_200_and_204_with_exact_app_origin(self):
+        for status in (200, 204):
+            with self.subTest(status=status):
+                self.run_smoke((status, {"access-control-allow-origin": ORIGINS[0]}, b""), succeeds=True)
+
+    def test_cors_rejects_denial_missing_wrong_or_wildcard_origin(self):
+        cases = [(403, {"access-control-allow-origin": ORIGINS[0]})]
+        for status in (200, 204):
+            cases.extend((status, headers) for headers in (
+                {}, {"access-control-allow-origin": ORIGINS[1]}, {"access-control-allow-origin": "*"},
+            ))
+        for status, headers in cases:
+            with self.subTest(status=status, headers=headers):
+                self.run_smoke((status, headers, b""), succeeds=False)
+
+
 class Lifecycle(unittest.TestCase):
     def setUp(self):
         self.before = HOME.state.read_text()

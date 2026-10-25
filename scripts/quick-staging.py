@@ -435,7 +435,7 @@ def command_smoke(home: Home) -> None:
         check("unsigned write", media, "PUT", f"/{bucket}/quick-smoke-probe", lambda s, h, b: s == 403, body=b"x")
     check("private read", media, "GET", f"/{settings['MINIO_PRIVATE_MEDIA_BUCKET']}/quick-smoke-probe", lambda s, h, b: s == 403)
     check("CORS", media, "OPTIONS", f"/{settings['MINIO_PRIVATE_MEDIA_BUCKET']}/quick-smoke-probe",
-          lambda s, h, b: s == 200 and h.get("access-control-allow-origin") == app,
+          lambda s, h, b: s in (200, 204) and h.get("access-control-allow-origin") == app,
           headers={"Origin": app, "Access-Control-Request-Method": "POST"})
     for name, passed in checks:
         print(f"{'PASS' if passed else 'FAIL'} {name}")
