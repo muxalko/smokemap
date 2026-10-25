@@ -6,14 +6,20 @@ x-runtime-profile: &runtime-profile
 x-secret-groups: &secret-groups
   - ${STAGING_SECRET_GID:?Set the numeric group allowed to read staging secrets}
 
+# The backend staging settings reject development service names such as
+# backend, db, and storage. Backend-facing connections therefore use these
+# fixed private network aliases, which the preflight pins exactly.
 x-backend-environment: &backend-environment
   SETTINGS_MODE: staging
+  DJANGO_ALLOWED_HOSTS: api.smokemap-staging.internal
+  DJANGO_TRUST_X_FORWARDED_PROTO: "true"
   POSTGRES_DB: ${POSTGRES_DB:?Set the staging database name}
   POSTGRES_USER: ${POSTGRES_USER:?Set the staging database user}
-  POSTGRES_HOST: db
+  POSTGRES_HOST: postgis.smokemap-staging.internal
   POSTGRES_PORT: "5432"
   POSTGRES_OPTIONS: -c search_path=smokemap
-  ALLOWED_HOSTS: backend
+  POSTGRES_SSLMODE: verify-full
+  PGSSLROOTCERT: /run/secrets/postgres_tls_ca
   CORS_ALLOWED_ORIGINS: ${STAGING_APP_URL:?Set the public staging application URL}
   CSRF_TRUSTED_ORIGINS: ${STAGING_APP_URL:?Set the public staging application URL}
   AWS_REGION: ${AWS_REGION:?Set the object-storage region}
@@ -22,12 +28,13 @@ x-backend-environment: &backend-environment
   AWS_S3_ADDRESSING_STYLE: path
   MEDIA_STORAGE_BUCKET_NAME: ${MINIO_PRIVATE_MEDIA_BUCKET:?Set the private source-media bucket}
   MEDIA_STORAGE_IDENTIFIER: smokemap-staging-private-media-v1
-  MEDIA_STORAGE_INTERNAL_ENDPOINT_URL: http://storage:9000
+  MEDIA_STORAGE_INTERNAL_ENDPOINT_URL: http://objects.smokemap-staging.internal:9000
   MEDIA_UPLOAD_ENDPOINT_URL: ${STAGING_MEDIA_URL:?Set the public staging media URL}
 
 x-backend-secrets: &backend-secrets
   - django_secret_key
   - postgres_password
+  - postgres_tls_ca
   - storage_access_key
   - storage_secret_key
 
@@ -46,20 +53,36 @@ services:
   db:
     <<: *runtime-profile
     image: ${POSTGIS_IMAGE:?Set an immutable PostGIS image digest}
+    # PostgreSQL refuses a private key that is not owned by its own user or
+    # root, and the image entrypoint drops the supplemental secret group.
+    # Copy the TLS pair to a memory-backed directory before the entrypoint
+    # starts the server as postgres.
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        install -d -m 0700 -o postgres -g postgres /run/postgresql-tls
+        install -m 0600 -o postgres -g postgres /run/secrets/postgres_tls_certificate /run/postgresql-tls/server.crt
+        install -m 0600 -o postgres -g postgres /run/secrets/postgres_tls_private_key /run/postgresql-tls/server.key
+        exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/run/postgresql-tls/server.crt -c ssl_key_file=/run/postgresql-tls/server.key
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?Set the staging database name}
       POSTGRES_USER: ${POSTGRES_USER:?Set the staging database user}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_password
+      - postgres_tls_certificate
+      - postgres_tls_private_key
     group_add: *secret-groups
+    tmpfs:
+      - /run/postgresql-tls
     volumes:
       - postgres-data:/var/lib/postgresql/data
     configs:
       - source: postgres_init
         target: /docker-entrypoint-initdb.d/00-create-smokemap-schema.sql
     networks:
-      - database
+      database:
+        aliases: [postgis.smokemap-staging.internal]
     healthcheck:
       test: [CMD-SHELL, "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -84,8 +107,9 @@ services:
     volumes:
       - minio-data:/data
     networks:
-      - media
-      - media-ingress
+      media:
+        aliases: [objects.smokemap-staging.internal]
+      media-ingress: {}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
       interval: 10s
@@ -138,11 +162,18 @@ services:
       - media
     restart: "no"
 
+  # Single-writer release job. It needs the runtime profile for db and
+  # storage-init, so run it only with the exact command in README.md.
   migrate:
     image: ${BACKEND_IMAGE:?Set an immutable backend image digest}
     profiles: [staging-migration]
     entrypoint: *backend-command
-    command: [python, manage.py, migrate, --noinput]
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        python manage.py check --deploy
+        python manage.py migrate --noinput
     environment: *backend-environment
     secrets: *backend-secrets
     group_add: *secret-groups
@@ -161,21 +192,30 @@ services:
     <<: *runtime-profile
     image: ${BACKEND_IMAGE:?Set an immutable backend image digest}
     entrypoint: *backend-command
-    command: [gunicorn, smokemap.wsgi:app, --bind, 0.0.0.0:8000, --access-logfile, -, --error-logfile, -]
+    command: [gunicorn, --bind=0.0.0.0:8000, --workers=2, --threads=4, --timeout=60, --access-logfile=-, --error-logfile=-, smokemap.wsgi:app]
     environment: *backend-environment
     secrets: *backend-secrets
     group_add: *secret-groups
     networks:
-      - database
-      - application
-      - media
+      database: {}
+      application:
+        aliases: [api.smokemap-staging.internal]
+      media: {}
     depends_on:
       db:
         condition: service_healthy
       storage-init:
         condition: service_completed_successfully
+      # Ignored for the runtime-only profile. If both profiles are ever
+      # selected together, the web process still waits for the migration job
+      # instead of serving while the schema changes.
+      migrate:
+        condition: service_completed_successfully
+        required: false
     healthcheck:
-      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://backend:8000/health/ready/', timeout=2)"]
+      # Staging redirects plain HTTP and rejects unknown hosts, so the probe
+      # presents the allowed alias and the trusted proxy header.
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/health/ready/', headers={'Host': 'api.smokemap-staging.internal', 'X-Forwarded-Proto': 'https'}), timeout=2).read()"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -226,8 +266,8 @@ services:
       NEXT_PUBLIC_LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       NEXTAUTH_URL: ${STAGING_APP_URL:?Set the public staging application URL}
-      BACKEND_INTERNAL_URL: http://backend:8000
-      GRAPHQL_INTERNAL_ENDPOINT: http://backend:8000/graphql/
+      BACKEND_INTERNAL_URL: http://api.smokemap-staging.internal:8000
+      GRAPHQL_INTERNAL_ENDPOINT: http://api.smokemap-staging.internal:8000/graphql/
     secrets:
       - nextauth_secret
     group_add: *secret-groups
@@ -281,6 +321,12 @@ secrets:
     file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/nextauth_secret
   postgres_password:
     file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/postgres_password
+  postgres_tls_ca:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/postgres_tls_ca
+  postgres_tls_certificate:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/postgres_tls_certificate
+  postgres_tls_private_key:
+    file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/postgres_tls_private_key
   storage_access_key:
     file: ${STAGING_SECRETS_DIR:?Set the absolute staging secret directory}/storage_access_key
   storage_secret_key:
