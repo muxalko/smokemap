@@ -958,7 +958,9 @@ def smoke_checks(settings: dict, context: ssl.SSLContext):
     try:
         edge_request(context, f"unknown.{app.split('.', 1)[1]}", port, "GET", "/")
         rejected = False
-    except (ssl.SSLError, ssl.CertificateError, ConnectionError):
+    except (ssl.SSLError, ConnectionResetError):
+        # An unrecognized-name alert, a certificate mismatch (an SSLError
+        # subclass), or a reset mean no session; a refused connection does not.
         rejected = True
     yield "unknown TLS names are rejected", rejected, "handshake"
     exposed = [
