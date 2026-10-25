@@ -373,7 +373,10 @@ client depends on them.
    IDs, and deployment checks.
 5. Publish a versioned API contract artifact.
 6. Document and rehearse `development → staging → main` promotion, rollback,
-   backup, and recovery.
+   backup, and recovery. Staging is rehearsed first on the Jenkins host
+   through the loopback-only local-staging mode (`deploy/staging/local/`).
+   Cloudflare routing, Access, and registry publication follow later through
+   the external staging contract.
 7. Inventory and migrate legacy places, requests, locations, media, tags, and
    users through reversible migrations.
 8. Retire duplicate write paths, obsolete clients, and the denormalized

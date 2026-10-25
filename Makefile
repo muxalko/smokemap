@@ -1,4 +1,6 @@
-.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-staging staging-preflight check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media test-e2e-public-media provision-test-users migrate codegen
+.PHONY: init sync status dev dev-build dev-detached stop down ps logs check check-compose check-staging staging-preflight check-local-staging local-staging-home local-staging-init local-staging-build local-staging-releases local-staging-preflight local-staging-migrate local-staging-start local-staging-stop local-staging-down local-staging-status local-staging-smoke local-staging-backup local-staging-restore local-staging-rollback check-backend check-frontend test test-backend test-backend-fresh test-frontend test-e2e test-e2e-submission-media test-e2e-public-media provision-test-users migrate codegen
+
+LOCAL_STAGING = python3 scripts/local-staging.py --home "$(LOCAL_STAGING_HOME)"
 
 E2E_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e
 E2E_SUBMISSION_COMPOSE = docker compose -f docker-compose.yaml -f e2e/docker-compose.e2e.yaml --project-name smokemap-e2e-submission-media
@@ -51,6 +53,34 @@ staging-preflight:
 		exit 64; \
 	}
 	python3 scripts/validate-staging.py --env-file "$(STAGING_ENV_FILE)"
+
+check-local-staging:
+	python3 scripts/validate-local-staging.py --template
+	python3 -m unittest discover -s tests -p 'test_local_staging.py' -v
+
+local-staging-home:
+	@test -n "$(LOCAL_STAGING_HOME)" || { \
+		echo "Set LOCAL_STAGING_HOME to an absolute directory outside every Git working tree." >&2; \
+		exit 64; \
+	}
+
+local-staging-init: local-staging-home
+	$(LOCAL_STAGING) init --https-port "$(or $(HTTPS_PORT),8443)" $(if $(SECRET_GID),--secret-gid "$(SECRET_GID)")
+
+local-staging-build local-staging-releases local-staging-start local-staging-stop local-staging-down local-staging-status local-staging-smoke: local-staging-home
+	$(LOCAL_STAGING) $(patsubst local-staging-%,%,$@)
+
+local-staging-preflight: local-staging-home
+	$(LOCAL_STAGING) preflight $(if $(RELEASE),--release "$(RELEASE)")
+
+local-staging-migrate local-staging-rollback: local-staging-home
+	$(LOCAL_STAGING) $(patsubst local-staging-%,%,$@) --release "$(RELEASE)"
+
+local-staging-backup: local-staging-home
+	$(LOCAL_STAGING) backup $(if $(LABEL),--label "$(LABEL)")
+
+local-staging-restore: local-staging-home
+	$(LOCAL_STAGING) restore --backup "$(BACKUP)" --confirm "$(CONFIRM)"
 
 check-backend:
 	docker compose exec -T backend python manage.py check
