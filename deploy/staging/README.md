@@ -28,6 +28,19 @@ creates containers, runs migrations, changes Cloudflare, or starts services.
 - Runtime services are behind the explicit `staging-runtime` profile, so the
   checked-in definition has no default startup path.
 
+## Local-staging mode
+
+`local/` holds a separate, root-owned mode for rehearsing this topology on the
+Jenkins host before Cloudflare exists. Its overlay:
+
+- swaps `cloudflared` for a non-root TLS edge that publishes only on `127.0.0.1`;
+- serves reserved `.internal` application and media origins;
+- runs locally built images by content-addressed ID.
+
+It never changes this file's external contract. The external preflight rejects
+a local configuration, and the local preflight rejects this file's environment.
+`local/README.md` is its runbook.
+
 Cloudflare recommends a remotely managed tunnel for new deployments, and its
 [current run-parameter documentation][cloudflare-run-parameters] records
 `--token-file` support in `cloudflared` 2025.4.0 or later. The connector in
@@ -42,8 +55,9 @@ created by this repository.
 
 The Compose file targets the backend production contract merged in
 smokemap-django-backend PR #116 (`05098a798961e6e1b968d78f3211a17df63d036f`)
-and the frontend production image proposed in smokemap-webapp PR #69. The
-preflight pins these values exactly:
+and the frontend production image merged in smokemap-webapp PR #69
+(`21b93f47ddb9614509f636c83478b8a10b8dac47`). The preflight pins these values
+exactly:
 
 | Concern | Root contract |
 | --- | --- |
@@ -67,8 +81,9 @@ format and the equality between frontend and backend origins. It cannot read
 the manifest inside an unpulled image, so the release manifest below must
 record that equality.
 
-PR #69's documentation still names `http://backend:8000`. Its validator
-accepts the `.internal` alias above, so no frontend change is required.
+The frontend's `docs/PRODUCTION_IMAGE.md` still names `http://backend:8000`.
+Its validator accepts the `.internal` alias above, so no frontend change is
+required.
 
 ## Database TLS
 
@@ -225,13 +240,10 @@ runtime command.
 Do not launch this topology yet. A passing preflight is necessary preparation,
 not authorization to deploy or evidence that staging is healthy.
 
-- The root `development` baseline still pins backend
-  `d9ddb016fd0fd6cff893f1d70dcb067574bedafc` and frontend
-  `d46626891ca8ec780a554b4fadd7b2515a8c7e5a`. Those revisions predate the
-  production contracts above. Moving the gitlinks is a separate integration
-  PR.
-- Frontend PR #69 is not merged, so no frontend production image contract
-  exists on `development` yet.
+- The root gitlinks must pin the merged production contracts: backend
+  `05098a798961e6e1b968d78f3211a17df63d036f` and frontend
+  `21b93f47ddb9614509f636c83478b8a10b8dac47`. Root issue #112 / PR #113 moves
+  them from the earlier `d9ddb01…` and `d466268…` baselines.
 - No registry, signing policy, or publication workflow exists. No backend,
   frontend, MinIO, PostGIS, or `cloudflared` release digest has been produced,
   approved, or recorded in a manifest.
@@ -242,9 +254,10 @@ not authorization to deploy or evidence that staging is healthy.
   provisioned. The TLS entrypoint wrapper and the readiness probe have not run
   against real images, because this change launches nothing. Server-side
   `hostssl` enforcement is a follow-up.
-- The tunnel, DNS routes, Access policy, upload hostname tests,
-  backup/restore rehearsal, migration rehearsal, smoke checks,
-  observability, and digest rollback record have not been created or proven.
+- The tunnel, DNS routes, Access policy, and upload hostname tests have not
+  been created or proven. The local-staging mode supplies operator commands
+  for backup/restore, migration, smoke, and digest rollback, but no
+  rehearsal has run yet. Observability remains open.
 
 Resolve those items through focused issues and PRs in the owning repositories,
 then update root gitlinks in separate integration PRs.

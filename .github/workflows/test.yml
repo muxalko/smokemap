@@ -19,6 +19,7 @@ jobs:
       - run: git submodule status
       - run: make check-compose
       - run: make check-staging
+      - run: make check-local-staging
 
   viewport-pan:
     runs-on: ubuntu-latest

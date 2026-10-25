@@ -155,6 +155,12 @@ Named volumes preserve PostgreSQL, MinIO data, frontend dependencies and the Nex
 
 `make check-compose` validates the rendered storage policies, endpoint/bucket
 wiring and cleanup-service isolation without requiring a running stack.
+`make check-staging` and `make check-local-staging` validate the external
+staging contract and the loopback-only local-staging overlay
+(`deploy/staging/local/README.md`) without starting anything. Local staging
+uses its own `smokemap-local-staging` project, a home outside every Git
+working tree, and `make local-staging-*` commands. Never point it at
+development containers, ports, or volumes.
 
 The stack must be running before these commands:
 

@@ -362,6 +362,65 @@ def validate_migration(services: dict) -> None:
         fail("backend must start only after a selected migration job completes")
 
 
+def validate_service_isolation(name: str, service: dict) -> None:
+    """Privilege, mount, and secret rules shared by every staging mode."""
+
+    if service.get("privileged"):
+        fail(f"{name} must not run privileged")
+    if service.get("cap_add"):
+        fail(f"{name} must not add Linux capabilities")
+    if service.get("pid"):
+        fail(f"{name} must not join another PID namespace")
+    if service.get("env_file"):
+        fail(f"{name} must not load an unreviewed environment file")
+    for mount in service.get("volumes", []):
+        if mount.get("type") == "bind":
+            fail(f"{name} contains an unexpected host bind mount")
+    for secret in service.get("secrets", []):
+        if isinstance(secret, dict) and secret.get("target") not in (
+            None,
+            f"/run/secrets/{secret['source']}",
+        ):
+            fail(f"{name} must mount each secret at its default path")
+    for key, value in service.get("environment", {}).items():
+        if any(marker in key for marker in ("PASSWORD", "SECRET", "TOKEN", "ACCESS_KEY")):
+            if not key.endswith("_FILE") or not str(value).startswith("/run/secrets/"):
+                fail(f"{name} places sensitive input {key} in its environment")
+    lowered = command_text(service).lower()
+    for forbidden in ("runserver", "yarn dev", "next dev", "makemigrations"):
+        if forbidden in lowered:
+            fail(f"{name} contains forbidden development command: {forbidden}")
+
+
+def validate_runtime_contract(services: dict, backend_env: dict) -> None:
+    """MinIO exposure, readiness, and production-server rules for every mode."""
+
+    storage = services["storage"]
+    storage_env = storage.get("environment", {})
+    if storage_env.get("MINIO_API_CORS_ALLOW_ORIGIN") != backend_env.get(
+        "CORS_ALLOWED_ORIGINS"
+    ):
+        fail("MinIO API CORS must match the exact staging application origin")
+    if storage_env.get("MINIO_BROWSER") != "off" or "--console-address" in command_text(storage):
+        fail("the MinIO browser console must remain disabled")
+    if "mc cors" in command_text(services["storage-init"]).lower():
+        fail("storage initialization must not call the unsupported mc cors command")
+
+    backend_healthcheck = " ".join(
+        services["backend"].get("healthcheck", {}).get("test", [])
+    )
+    if any(marker not in backend_healthcheck for marker in BACKEND_READINESS_PROBE):
+        fail(
+            "backend readiness must send the allowed Host and trusted "
+            "X-Forwarded-Proto headers"
+        )
+
+    if "gunicorn" not in command_text(services["backend"]):
+        fail("backend must use the production WSGI server contract")
+    if "yarn start" not in command_text(services["frontend"]):
+        fail("frontend must use the production server contract")
+
+
 def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
     if config.get("name") != "smokemap-staging":
         fail("the reviewed staging project name must remain smokemap-staging")
@@ -397,31 +456,7 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
             fail(f"{name} still uses a placeholder image")
         if service.get("ports") or service.get("expose"):
             fail(f"{name} must not publish or expose a port")
-        if service.get("privileged"):
-            fail(f"{name} must not run privileged")
-        if service.get("cap_add"):
-            fail(f"{name} must not add Linux capabilities")
-        if service.get("pid"):
-            fail(f"{name} must not join another PID namespace")
-        if service.get("env_file"):
-            fail(f"{name} must not load an unreviewed environment file")
-        for mount in service.get("volumes", []):
-            if mount.get("type") == "bind":
-                fail(f"{name} contains an unexpected host bind mount")
-        for secret in service.get("secrets", []):
-            if isinstance(secret, dict) and secret.get("target") not in (
-                None,
-                f"/run/secrets/{secret['source']}",
-            ):
-                fail(f"{name} must mount each secret at its default path")
-        for key, value in service.get("environment", {}).items():
-            if any(marker in key for marker in ("PASSWORD", "SECRET", "TOKEN", "ACCESS_KEY")):
-                if not key.endswith("_FILE") or not str(value).startswith("/run/secrets/"):
-                    fail(f"{name} places sensitive input {key} in its environment")
-        lowered = command_text(service).lower()
-        for forbidden in ("runserver", "yarn dev", "next dev", "makemigrations"):
-            if forbidden in lowered:
-                fail(f"{name} contains forbidden development command: {forbidden}")
+        validate_service_isolation(name, service)
 
     secret_group_id(services)
 
@@ -483,30 +518,7 @@ def validate_structure(config: dict, *, allow_placeholders: bool) -> None:
     if backend_env.get("AWS_STORAGE_BUCKET_NAME") == backend_env.get("MEDIA_STORAGE_BUCKET_NAME"):
         fail("public and private media buckets must be distinct")
 
-    storage = services["storage"]
-    storage_env = storage.get("environment", {})
-    if storage_env.get("MINIO_API_CORS_ALLOW_ORIGIN") != backend_env.get(
-        "CORS_ALLOWED_ORIGINS"
-    ):
-        fail("MinIO API CORS must match the exact staging application origin")
-    if storage_env.get("MINIO_BROWSER") != "off" or "--console-address" in command_text(storage):
-        fail("the MinIO browser console must remain disabled")
-    if "mc cors" in command_text(services["storage-init"]).lower():
-        fail("storage initialization must not call the unsupported mc cors command")
-
-    backend_healthcheck = " ".join(
-        services["backend"].get("healthcheck", {}).get("test", [])
-    )
-    if any(marker not in backend_healthcheck for marker in BACKEND_READINESS_PROBE):
-        fail(
-            "backend readiness must send the allowed Host and trusted "
-            "X-Forwarded-Proto headers"
-        )
-
-    if "gunicorn" not in command_text(services["backend"]):
-        fail("backend must use the production WSGI server contract")
-    if "yarn start" not in command_text(services["frontend"]):
-        fail("frontend must use the production server contract")
+    validate_runtime_contract(services, backend_env)
 
 
 def validate_permissions(
@@ -528,13 +540,23 @@ def validate_permissions(
 
 
 def validate_release_inputs(config: dict, env_file: Path) -> None:
+    validate_environment_file(env_file)
+    validate_secret_files(config)
+
+
+def validate_environment_file(
+    env_file: Path,
+    *,
+    variable: str = "STAGING_ENV_FILE",
+    label: str = "staging environment file",
+) -> None:
     if not env_file.is_absolute():
-        fail("STAGING_ENV_FILE must be an absolute path")
+        fail(f"{variable} must be an absolute path")
     if ROOT in env_file.parents:
-        fail("the staging environment file must remain outside the repository")
+        fail(f"the {label} must remain outside the repository")
     if not env_file.is_file():
-        fail(f"staging environment file must be a regular file: {env_file}")
-    validate_permissions(env_file, 0o600, "staging environment file")
+        fail(f"{label} must be a regular file: {env_file}")
+    validate_permissions(env_file, 0o600, label)
     for line in env_file.read_text(encoding="utf-8").splitlines():
         key, separator, _ = line.strip().partition("=")
         if (
@@ -545,8 +567,10 @@ def validate_release_inputs(config: dict, env_file: Path) -> None:
                 for marker in ("PASSWORD", "SECRET", "TOKEN", "ACCESS_KEY")
             )
         ):
-            fail("the staging environment file must contain secret paths, never secret values")
+            fail(f"the {label} must contain secret paths, never secret values")
 
+
+def validate_secret_files(config: dict) -> None:
     expected_gid = secret_group_id(config["services"])
     secret_paths = []
     for name, secret in config["secrets"].items():
