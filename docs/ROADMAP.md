@@ -4,6 +4,13 @@ Status: Active planning document
 
 Last updated: 2026-10-08
 
+Temporary rehearsal path (2026-10-25): the explicit
+[two-Quick-Tunnel operator](../deploy/staging/quick/README.md) prepares an
+independent `smokemap-quick-staging` project with exact public origins and local
+image IDs. It leaves local/external staging contracts unchanged. Preparation
+and CI are not launch or product/recovery evidence; the primary operator owns
+that temporary public rehearsal. M5 deployment blockers remain open.
+
 Evidence base:
 
 - [Joint architecture and engineering assessment](ARCHITECTURE_ASSESSMENT.md)

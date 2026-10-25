@@ -303,3 +303,10 @@ staging topologies become healthy with the explicit PID 1 probe, even when
 simulated batches fail. CI pins the Compose binary version and checksum.
 This compatibility fixture does not replace a full production-image startup
 rehearsal by the operator.
+
+## Temporary accountless rehearsal
+
+For the explicitly selected two-Quick-Tunnel rehearsal, use the separate
+[quick-staging runbook](quick/README.md). Its dedicated project, generated
+credentials, exact temporary HTTPS origins and local image IDs are opt-in;
+this external staging contract continues to require registry digests.

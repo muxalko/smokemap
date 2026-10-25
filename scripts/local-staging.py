@@ -73,6 +73,7 @@ UPSTREAM_IMAGES = {
     "db": "postgis/postgis:17-3.5@sha256:45f2a608397fa67d236b012c14a9e3ea31e9fe813edbeb5c1c0d1acbf0d48ea9",
     local.EDGE_SERVICE: "nginxinc/nginx-unprivileged:1.30.6-alpine@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03",
 }
+MODE = "local-staging"
 IMAGE_TAG_PREFIX = PROJECT_NAME
 WRITERS = (local.EDGE_SERVICE, "frontend", "media-cleanup", "backend")
 SECRET_ALPHABET = string.ascii_letters + string.digits
@@ -731,7 +732,7 @@ def command_build(home: Home) -> None:
     state = load_state(home)
     manifest = {
         "schema": 1,
-        "mode": "local-staging",
+        "mode": MODE,
         "release_id": release_id,
         "build_started_at": started,
         "build_finished_at": timestamp(),
