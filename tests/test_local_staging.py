@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import ast
 import contextlib
 import copy
 import importlib.util
 import io
+import itertools
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -12,6 +15,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest import mock
+from urllib.parse import parse_qs, urlsplit
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -103,6 +107,58 @@ EXPECTED_REVISIONS = {
 }
 
 
+class SmokeViewportTests(unittest.TestCase):
+    def viewport_result(self, status=200, body=b'{"type":"FeatureCollection","features":[]}'):
+        # Consume only the application probes: no sockets, Docker, or live data.
+        responses = [(200, {}, b"home"), (200, {}, b'{"data":{"__typename":"Query"}}'),
+                     (status, {}, body)]
+        with mock.patch.object(local_staging, "edge_request", side_effect=responses) as request:
+            checks = list(itertools.islice(
+                local_staging.smoke_checks(local.read_env_file(HOME.settings), None), 3
+            ))
+        return checks[-1], request.call_args_list[-1].args[4]
+
+    def test_smoke_query_satisfies_the_pinned_backend_viewport_parser(self) -> None:
+        result, path = self.viewport_result()
+        self.assertTrue(result[1])  # An empty viewport is a successful result.
+        parsed = urlsplit(path)
+        self.assertEqual(parsed.path, "/api/smokemap/locations")
+        query = {key: values[0] for key, values in parse_qs(parsed.query).items()}
+        self.assertEqual(set(query), {"bbox", "zoom"})
+        # Execute the actual pure parser from the pinned backend, without Django
+        # dependencies. This catches contract drift (including required zoom).
+        source = ast.parse((ROOT / "smokemap-django-backend/backend/views.py").read_text())
+        names = {"ViewportQueryError", "parse_viewport_query"}
+        constants = {"VIEWPORT_MAX_SPAN_DEGREES", "VIEWPORT_MAX_CATEGORIES"}
+        nodes = [node for node in source.body
+                 if getattr(node, "name", None) in names
+                 or (isinstance(node, ast.Assign)
+                     and any(isinstance(target, ast.Name) and target.id in constants
+                             for target in node.targets))]
+        namespace = {"math": math}
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), "pinned_viewport_parser", "exec"), namespace)
+        bbox, zoom, categories = namespace["parse_viewport_query"](query)
+        self.assertEqual(bbox, (-0.5, 51.3, 0.3, 51.7))
+        self.assertEqual(zoom, 12)
+        self.assertEqual(categories, ())
+        for invalid in ({"in_bbox": query["bbox"]}, {"bbox": query["bbox"]}):
+            with self.subTest(query=invalid):
+                with self.assertRaises(namespace["ViewportQueryError"]):
+                    namespace["parse_viewport_query"](invalid)
+
+    def test_smoke_rejects_failed_or_malformed_geojson(self) -> None:
+        for status, body in (
+            (400, b'{"code":"invalid_viewport","detail":"bbox is required"}'),
+            (400, b'{"type":"FeatureCollection","features":[]}'),
+            (200, b'not json'), (200, b'[]'),
+            (200, b'{"type":"FeatureCollection"}'),
+            (200, b'{"type":"FeatureCollection","features":{}}'),
+            (200, b'{"type":"Feature","features":[]}'),
+        ):
+            with self.subTest(status=status, body=body):
+                self.assertFalse(self.viewport_result(status, body)[0][1])
+
+
 class LocalStructureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -114,6 +170,28 @@ class LocalStructureTests(unittest.TestCase):
 
     def test_checked_in_templates_are_structurally_valid(self) -> None:
         local.validate_template()
+
+    def test_cleanup_must_disable_the_inherited_web_probe(self) -> None:
+        self.assertEqual(self.config["services"]["media-cleanup"]["healthcheck"], {"disable": True})
+        for healthcheck in (None, {}, {"disable": False},
+                            self.config["services"]["backend"]["healthcheck"]):
+            config = copy.deepcopy(self.config)
+            config["services"]["media-cleanup"]["healthcheck"] = healthcheck
+            self.assert_rejected(config, "media-cleanup must explicitly disable")
+
+    def test_local_overlay_rejects_anonymous_policy_drift(self) -> None:
+        for old, new in (
+            ('"s3:GetObject"', '"s3:GetObject","s3:ListBucket"'),
+            ('"s3:GetObject"', '"s3:PutObject"'),
+            ('arn:aws:s3:::$${MINIO_BUCKET}/*', 'arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}/*'),
+            ('mc anonymous set-json "$${policy_file}"', 'mc anonymous set download'),
+            ('mc anonymous set private', 'mc anonymous set download'),
+        ):
+            with self.subTest(replacement=new):
+                config = copy.deepcopy(self.config)
+                command = config["services"]["storage-init"]["command"]
+                command[0] = command[0].replace(old, new, 1)
+                self.assert_rejected(config, "storage-init must install only anonymous GetObject")
 
     def test_tunnel_is_absent_and_edge_is_the_only_publisher(self) -> None:
         services = self.config["services"]

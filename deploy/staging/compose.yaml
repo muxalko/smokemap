@@ -144,12 +144,17 @@ services:
         test "$${MINIO_BUCKET}" != "$${MINIO_PRIVATE_MEDIA_BUCKET}"
         mc alias set local http://storage:9000 "$${root_user}" "$${root_password}"
         mc mb --ignore-existing "local/$${MINIO_BUCKET}"
-        mc anonymous set download "local/$${MINIO_BUCKET}"
+        policy_file="$$(mktemp)"
+        trap 'rm -f "$${policy_file}"' EXIT
+        cat >"$${policy_file}" <<PUBLIC_READ_POLICY
+        {"Version":"2012-10-17","Statement":[
+          {"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::$${MINIO_BUCKET}/*"]}
+        ]}
+        PUBLIC_READ_POLICY
+        mc anonymous set-json "$${policy_file}" "local/$${MINIO_BUCKET}"
         mc mb --ignore-existing "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
         mc anonymous set private "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"
         mc admin user add local "$${storage_access_key}" "$${storage_secret_key}"
-        policy_file="$$(mktemp)"
-        trap 'rm -f "$${policy_file}"' EXIT
         cat >"$${policy_file}" <<POLICY
         {"Version":"2012-10-17","Statement":[
           {"Effect":"Allow","Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::$${MINIO_BUCKET}","arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}"]},
@@ -249,6 +254,10 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    # This loop runs no HTTP server. Disable the production backend image's
+    # web healthcheck; Compose --wait requires only a running worker process.
+    healthcheck:
+      disable: true
     restart: unless-stopped
 
   frontend:

@@ -392,8 +392,47 @@ def validate_service_isolation(name: str, service: dict) -> None:
             fail(f"{name} contains forbidden development command: {forbidden}")
 
 
+def validate_anonymous_storage_policy(service: dict) -> None:
+    """Pin the object-only public policy separately from authenticated app IAM."""
+
+    command = command_text(service)
+    match = re.search(
+        r'cat >"\$\$\{policy_file\}" <<PUBLIC_READ_POLICY\n(.*?)\nPUBLIC_READ_POLICY\n',
+        command,
+        re.DOTALL,
+    )
+    try:
+        policy = json.loads(match.group(1)) if match else None
+    except ValueError:
+        policy = None
+    expected = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"AWS": ["*"]},
+            "Action": ["s3:GetObject"],
+            "Resource": ["arn:aws:s3:::$${MINIO_BUCKET}/*"],
+        }],
+    }
+    anonymous_commands = [
+        line.strip() for line in command.splitlines() if "mc anonymous" in line
+    ]
+    if policy != expected or anonymous_commands != [
+        'mc anonymous set-json "$${policy_file}" "local/$${MINIO_BUCKET}"',
+        'mc anonymous set private "local/$${MINIO_PRIVATE_MEDIA_BUCKET}"',
+    ]:
+        fail(
+            "storage-init must install only anonymous GetObject on public objects "
+            "and keep private media private"
+        )
+
+
 def validate_runtime_contract(services: dict, backend_env: dict) -> None:
     """MinIO exposure, readiness, and production-server rules for every mode."""
+
+    validate_anonymous_storage_policy(services["storage-init"])
+    if services["media-cleanup"].get("healthcheck") != {"disable": True}:
+        fail("media-cleanup must explicitly disable the inherited HTTP healthcheck")
 
     storage = services["storage"]
     storage_env = storage.get("environment", {})

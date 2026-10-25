@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -172,6 +173,80 @@ class StagingStructureTests(unittest.TestCase):
             "backend readiness must send the allowed Host and trusted",
         ):
             validate_staging.validate_structure(config, allow_placeholders=True)
+
+    def test_cleanup_must_disable_the_inherited_web_probe(self) -> None:
+        self.assertEqual(self.config["services"]["media-cleanup"]["healthcheck"], {"disable": True})
+        for healthcheck in (None, {}, {"disable": False},
+                            self.config["services"]["backend"]["healthcheck"]):
+            config = copy.deepcopy(self.config)
+            config["services"]["media-cleanup"]["healthcheck"] = healthcheck
+            with self.assertRaisesRegex(validate_staging.ValidationError,
+                                        "media-cleanup must explicitly disable"):
+                validate_staging.validate_structure(config, allow_placeholders=True)
+
+    def test_anonymous_policy_drift_is_rejected(self) -> None:
+        for old, new in (
+            ('"s3:GetObject"', '"s3:GetObject","s3:ListBucket"'),
+            ('"s3:GetObject"', '"s3:PutObject"'),
+            ('"s3:GetObject"', '"s3:DeleteObject"'),
+            ('"s3:GetObject"', '"s3:*"'),
+            ('"Version":"2012-10-17"', '"Version":invalid'),
+            ('cat >"$${policy_file}" <<PUBLIC_READ_POLICY',
+             'cat >"$${unused_policy}" <<PUBLIC_READ_POLICY'),
+            ('<<PUBLIC_READ_POLICY', '<<UNREVIEWED_POLICY'),
+            ('arn:aws:s3:::$${MINIO_BUCKET}/*', 'arn:aws:s3:::$${MINIO_PRIVATE_MEDIA_BUCKET}/*'),
+            ('arn:aws:s3:::$${MINIO_BUCKET}/*', 'arn:aws:s3:::*/*'),
+            ('mc anonymous set-json "$${policy_file}"', 'mc anonymous set download'),
+            ('mc anonymous set private', 'mc anonymous set download'),
+        ):
+            with self.subTest(replacement=new):
+                config = copy.deepcopy(self.config)
+                command = config["services"]["storage-init"]["command"]
+                command[0] = command[0].replace(old, new, 1)
+                with self.assertRaisesRegex(validate_staging.ValidationError,
+                                            "storage-init must install only anonymous GetObject"):
+                    validate_staging.validate_structure(config, allow_placeholders=True)
+
+    def test_storage_init_installs_only_public_object_reads_with_bucket_overrides(self) -> None:
+        # Execute the rendered init shell with an mc recorder and synthetic
+        # secrets. No Docker, object store, or external credentials are used.
+        recorder = r'''
+cat() {
+    case "${1:-}" in
+        /run/secrets/*) printf 'test-only-value' ;;
+        *) command cat "$@" ;;
+    esac
+}
+mc() {
+    if [ "$1" = anonymous ]; then
+        case "$2" in
+            set-json) printf '%s\n' "$4"; command cat "$3" ;;
+            set) printf '%s:%s\n' "$3" "$4" ;;
+            *) exit 90 ;;
+        esac
+    fi
+}
+'''
+        command = self.config["services"]["storage-init"]["command"][0].replace("$$", "$")
+        for public, private in (("legacy-fixture", "private-fixture"),
+                                ("other-public", "other-private")):
+            with self.subTest(public=public):
+                result = subprocess.run(
+                    ["/bin/sh", "-ec", recorder + command],
+                    env={"PATH": os.environ["PATH"], "MINIO_BUCKET": public,
+                         "MINIO_PRIVATE_MEDIA_BUCKET": private},
+                    check=True, text=True, capture_output=True,
+                )
+                bucket, _, remainder = result.stdout.partition("\n")
+                policy, offset = json.JSONDecoder().raw_decode(remainder)
+                self.assertEqual(bucket, f"local/{public}")
+                self.assertEqual(policy, {
+                    "Version": "2012-10-17",
+                    "Statement": [{"Effect": "Allow", "Principal": {"AWS": ["*"]},
+                                   "Action": ["s3:GetObject"],
+                                   "Resource": [f"arn:aws:s3:::{public}/*"]}],
+                })
+                self.assertEqual(remainder[offset:].strip(), f"private:local/{private}")
 
     def test_secret_consumers_share_nonroot_read_group(self) -> None:
         services = self.config["services"]

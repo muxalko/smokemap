@@ -120,10 +120,12 @@ issued against `MEDIA_UPLOAD_ENDPOINT_URL`:
   requires. It is not a public URL.
 
 The legacy bucket named by `MINIO_BUCKET` keeps its existing
-anonymous-download semantics through the same API listener. This contract
-neither widens nor narrows them. The private bucket stays anonymous-private,
-and the application storage identity cannot delete or overwrite the legacy
-bucket.
+anonymous object reads through the same API listener. Storage initialization
+replaces the canned `download` policy with an explicit `s3:GetObject` grant
+on public-bucket objects only. Anonymous bucket listing and writes are denied;
+the authenticated application identity has a separate policy. The private
+bucket stays anonymous-private, and the application storage identity cannot
+delete or overwrite the legacy bucket.
 
 Any Cloudflare Access policy chosen for the upload hostname must still let
 these browser flows through, including the POST's CORS preflight. Run the
@@ -276,3 +278,14 @@ not authorization to deploy or evidence that staging is healthy.
 
 Resolve those items through focused issues and PRs in the owning repositories,
 then update root gitlinks in separate integration PRs.
+
+## Cleanup worker status
+
+`media-cleanup` runs the periodic command loop without an HTTP server. Its
+Compose healthcheck explicitly disables the production backend image's HTTP
+probe. `up --wait` therefore checks that the worker process is running; it
+does not prove that cleanup batches succeed or that the worker is making
+progress. The worker still waits for backend readiness before starting and
+restarts unless stopped. Inspect its command logs and durable cleanup backlog
+to monitor successful work; individual batch failures are retried by the loop.
+This status contract applies to both external and local staging.

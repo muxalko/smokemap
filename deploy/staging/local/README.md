@@ -137,6 +137,14 @@ reviewed files. It then validates:
 
 `preflight` starts nothing.
 
+The inherited storage initialization grants anonymous `s3:GetObject` only on
+legacy public-bucket objects. Listings, writes, and private reads remain denied.
+The cleanup worker explicitly disables the backend image's HTTP healthcheck
+because it runs no server. `start` uses Compose `--wait`, which requires this
+worker to be running, while the backend, frontend, storage, and database must
+be healthy. A running worker does not prove successful cleanup batches; monitor
+its logs and durable backlog as described in `../README.md`.
+
 `migrate` repeats preflight and requires the root commit to be on
 `origin/development`. It then runs the single-writer job
 (`check --deploy`, then `migrate --noinput`) with both profiles, exactly as
@@ -159,7 +167,8 @@ make local-staging-rollback LOCAL_STAGING_HOME="$LOCAL_STAGING_HOME" RELEASE=<pr
 `smoke` probes the edge as a browser would, pinning loopback and the edge
 trust anchor. It checks:
 
-- the application page, same-origin GraphQL, and bounded viewport GeoJSON;
+- the application page, same-origin GraphQL, and bounded viewport GeoJSON using
+  `bbox=minx,miny,maxx,maxy&zoom=12` (including an empty feature list);
 - that the application origin never answers as MinIO, and the media origin never answers as the backend;
 - anonymous listing of the root and both buckets, unsigned writes to both buckets, unsigned private reads, and the unsigned admin API, all `403`;
 - upload CORS for the exact application origin only;
