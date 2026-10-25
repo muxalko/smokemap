@@ -217,6 +217,21 @@ migration implicitly.
 
 ## Controlled migration and runtime order
 
+All backend jobs use exactly `POSTGRES_OPTIONS=-c search_path=smokemap,public`.
+The pinned PostGIS image initializes its extension in `public`; including that
+schema exposes `geometry` and spatial functions during fresh migrations.
+Keeping `smokemap` first makes it the target for application tables and indexes.
+Local staging inherits this same setting. The preflights reject either omitting
+`public` or putting it first.
+
+`make test-staging-postgis` checks both rendered contracts against the pinned
+local-staging PostGIS image in a fresh disposable container. It proves the old
+path fails GIS DDL, then exercises geometry columns, spatial indexes, and a
+spatial insert/query with the configured options. It uses an in-memory database,
+no network or published ports, and no existing database, volume, or credentials.
+CI runs this regression as part of `integration`. This is a database DDL test,
+not a full Django migration or a staging deployment rehearsal.
+
 After the manifest is approved and the preflight passes, a release runs
 exactly two commands from the workspace root, in this order:
 

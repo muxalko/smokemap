@@ -17,7 +17,8 @@ x-backend-environment: &backend-environment
   POSTGRES_USER: ${POSTGRES_USER:?Set the staging database user}
   POSTGRES_HOST: postgis.smokemap-staging.internal
   POSTGRES_PORT: "5432"
-  POSTGRES_OPTIONS: -c search_path=smokemap
+  # Keep application DDL in smokemap and expose the image's public PostGIS types.
+  POSTGRES_OPTIONS: -c search_path=smokemap,public
   POSTGRES_SSLMODE: verify-full
   PGSSLROOTCERT: /run/secrets/postgres_tls_ca
   CORS_ALLOWED_ORIGINS: ${STAGING_APP_URL:?Set the public staging application URL}
