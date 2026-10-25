@@ -115,8 +115,7 @@ def render(settings_file: Path, release_file: Path) -> dict:
 
 def connector_command(service: str) -> list[str]:
     target = "http://frontend:3000" if service == "quick-app" else "http://storage:9000"
-    return ["tunnel", "--loglevel", "fatal", "--transport-loglevel", "fatal",
-            "--metrics", "0.0.0.0:2000", "--url", target]
+    return ["tunnel", "--loglevel", "fatal", "--metrics", "0.0.0.0:2000", "--url", target]
 
 
 def validate_structure(config: dict, *, allow_placeholders: bool) -> None:

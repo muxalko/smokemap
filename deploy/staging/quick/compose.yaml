@@ -40,9 +40,9 @@ services:
     profiles: !override [disabled-named-tunnel]
   quick-app:
     <<: *connector
-    command: [tunnel, --loglevel, fatal, --transport-loglevel, fatal, --metrics, "0.0.0.0:2000", --url, "http://frontend:3000"]
+    command: [tunnel, --loglevel, fatal, --metrics, "0.0.0.0:2000", --url, "http://frontend:3000"]
     networks: [edge, ingress]
   quick-media:
     <<: *connector
-    command: [tunnel, --loglevel, fatal, --transport-loglevel, fatal, --metrics, "0.0.0.0:2000", --url, "http://storage:9000"]
+    command: [tunnel, --loglevel, fatal, --metrics, "0.0.0.0:2000", --url, "http://storage:9000"]
     networks: [edge, media-ingress]

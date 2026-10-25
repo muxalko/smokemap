@@ -102,7 +102,7 @@ use the private backend alias; Django trusts only that configured hop and
 requires database `verify-full` TLS. MinIO receives the original signed Host.
 The primary must verify those behaviors through actual public HTTPS.
 
-Both cloudflared log levels are `fatal`; Docker log storage is `none` even for
+The cloudflared log level is `fatal`; Docker log storage is `none` even for
 fatal failures. Discovery never needs logs. No command dumps settings,
 secrets, sessions, response bodies, presigned form fields or signed URL queries.
 The smoke command prints only check names and pass/fail results.
