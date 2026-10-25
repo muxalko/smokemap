@@ -47,6 +47,10 @@ check-staging:
 	python3 scripts/validate-staging.py --template
 	python3 -m unittest discover -s tests -p 'test_validate_staging.py' -v
 
+.PHONY: test-staging-postgis
+test-staging-postgis:
+	python3 -m unittest discover -s tests -p 'test_staging_postgis.py' -v
+
 staging-preflight:
 	@test -n "$(STAGING_ENV_FILE)" || { \
 		echo "Set STAGING_ENV_FILE to the absolute path of the staging environment file." >&2; \

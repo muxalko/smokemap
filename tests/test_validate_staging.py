@@ -218,6 +218,23 @@ class BackendProductionContractTests(unittest.TestCase):
             environment["DJANGO_ALLOWED_HOSTS"],
         )
 
+    def test_search_path_requires_application_schema_then_public_postgis(self) -> None:
+        for name in validate_staging.BACKEND_SERVICES:
+            self.assertEqual(
+                self.config["services"][name]["environment"]["POSTGRES_OPTIONS"],
+                "-c search_path=smokemap,public",
+            )
+        for value in (
+            "-c search_path=smokemap",
+            "-c search_path=public,smokemap",
+            "-c search_path=public",
+        ):
+            with self.subTest(options=value):
+                config = copy.deepcopy(self.config)
+                for name in validate_staging.BACKEND_SERVICES:
+                    config["services"][name]["environment"]["POSTGRES_OPTIONS"] = value
+                self.assert_rejected(config, "backend POSTGRES_OPTIONS must be")
+
     def test_development_service_names_are_rejected(self) -> None:
         cases = {
             "POSTGRES_HOST": "db",

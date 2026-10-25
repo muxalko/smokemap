@@ -277,6 +277,23 @@ class LocalStructureTests(unittest.TestCase):
         config["services"]["storage"]["environment"]["MINIO_BROWSER"] = "on"
         self.assert_rejected(config, "MinIO browser console must remain disabled")
 
+    def test_search_path_preserves_application_schema_and_public_postgis(self) -> None:
+        for name in staging.BACKEND_SERVICES:
+            self.assertEqual(
+                self.config["services"][name]["environment"]["POSTGRES_OPTIONS"],
+                "-c search_path=smokemap,public",
+            )
+        for value in (
+            "-c search_path=smokemap",
+            "-c search_path=public,smokemap",
+            "-c search_path=public",
+        ):
+            with self.subTest(options=value):
+                config = copy.deepcopy(self.config)
+                for name in staging.BACKEND_SERVICES:
+                    config["services"][name]["environment"]["POSTGRES_OPTIONS"] = value
+                self.assert_rejected(config, "backend POSTGRES_OPTIONS must be")
+
     def test_origins_are_pinned_to_reserved_local_names(self) -> None:
         for key, value in (
             ("CORS_ALLOWED_ORIGINS", "https://staging.example.com"),

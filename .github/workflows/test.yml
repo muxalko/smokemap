@@ -20,6 +20,8 @@ jobs:
       - run: make check-compose
       - run: make check-staging
       - run: make check-local-staging
+      - name: Verify fresh staging PostGIS visibility and GIS DDL
+        run: make test-staging-postgis
 
   viewport-pan:
     runs-on: ubuntu-latest

@@ -106,7 +106,7 @@ BACKEND_CONTRACT = {
     "DJANGO_TRUST_X_FORWARDED_PROTO": "true",
     "POSTGRES_HOST": DATABASE_ALIAS,
     "POSTGRES_PORT": "5432",
-    "POSTGRES_OPTIONS": "-c search_path=smokemap",
+    "POSTGRES_OPTIONS": "-c search_path=smokemap,public",
     "POSTGRES_SSLMODE": "verify-full",
     "PGSSLROOTCERT": "/run/secrets/postgres_tls_ca",
     "AWS_S3_ADDRESSING_STYLE": "path",
