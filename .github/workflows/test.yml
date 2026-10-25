@@ -20,6 +20,27 @@ jobs:
       - run: make check-compose
       - run: make check-staging
       - run: make check-local-staging
+      - run: make check-quick-staging
+      - name: Verify official immutable Quick Tunnel CLI offline
+        shell: bash
+        run: |
+          image="$(python3 - <<'PY'
+          import importlib.util
+          spec = importlib.util.spec_from_file_location('quick', 'scripts/validate-quick-staging.py')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          print(module.CLOUDFLARED_IMAGE)
+          PY
+          )"
+          docker pull "$image"
+          docker run --rm --network none --read-only --user 65532:65532 \
+            --cap-drop ALL --security-opt no-new-privileges:true "$image" version \
+            | grep 'cloudflared version 2026.10.0'
+          docker run --rm --network none --read-only --user 65532:65532 \
+            --cap-drop ALL --security-opt no-new-privileges:true "$image" tunnel --help \
+            > "$RUNNER_TEMP/quick-help.txt"
+          grep -- '--transport-loglevel' "$RUNNER_TEMP/quick-help.txt"
+          grep -- '--metrics' "$RUNNER_TEMP/quick-help.txt"
       - name: Verify fresh staging PostGIS visibility and GIS DDL
         run: make test-staging-postgis
       - name: Verify cleanup wait compatibility with Compose 2.35.1

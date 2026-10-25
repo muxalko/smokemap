@@ -200,3 +200,9 @@ migrate:
 
 codegen:
 	docker compose exec -T frontend yarn codegen
+
+# Pure rendering/unit evidence; never starts a Quick Tunnel.
+.PHONY: check-quick-staging
+check-quick-staging:
+	python3 scripts/validate-quick-staging.py --template
+	python3 -m unittest discover -s tests -p 'test_quick_staging.py' -v
