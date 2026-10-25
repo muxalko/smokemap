@@ -254,10 +254,14 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    # This loop runs no HTTP server. Disable the production backend image's
-    # web healthcheck; Compose --wait requires only a running worker process.
+    # Process liveness only: no HTTP server or cleanup-progress guarantee.
+    # An explicit probe also supports Compose 2.35 --wait with this image.
     healthcheck:
-      disable: true
+      test: [CMD, python, -c, "import os; os.kill(1, 0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
   frontend:

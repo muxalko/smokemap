@@ -117,6 +117,15 @@ BACKEND_READINESS_PROBE = (
     f"'Host': '{BACKEND_ALIAS}'",
     "'X-Forwarded-Proto': 'https'",
 )
+# Pin the whole mapping so disabled, inherited HTTP, and self-PID probes fail
+# closed in both external and local staging. This says nothing about batches.
+CLEANUP_HEALTHCHECK = {
+    "test": ["CMD", "python", "-c", "import os; os.kill(1, 0)"],
+    "interval": "10s",
+    "timeout": "5s",
+    "retries": 3,
+    "start_period": "5s",
+}
 FRONTEND_CONTRACT = {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_ENVIRONMENT": "staging",
@@ -431,8 +440,8 @@ def validate_runtime_contract(services: dict, backend_env: dict) -> None:
     """MinIO exposure, readiness, and production-server rules for every mode."""
 
     validate_anonymous_storage_policy(services["storage-init"])
-    if services["media-cleanup"].get("healthcheck") != {"disable": True}:
-        fail("media-cleanup must explicitly disable the inherited HTTP healthcheck")
+    if services["media-cleanup"].get("healthcheck") != CLEANUP_HEALTHCHECK:
+        fail("media-cleanup must use the exact PID 1 process-only healthcheck")
 
     storage = services["storage"]
     storage_env = storage.get("environment", {})

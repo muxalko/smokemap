@@ -47,9 +47,12 @@ check-staging:
 	python3 scripts/validate-staging.py --template
 	python3 -m unittest discover -s tests -p 'test_validate_staging.py' -v
 
-.PHONY: test-staging-postgis
+.PHONY: test-staging-postgis test-staging-cleanup
 test-staging-postgis:
 	python3 -m unittest discover -s tests -p 'test_staging_postgis.py' -v
+
+test-staging-cleanup:
+	python3 -m unittest discover -s tests -p 'test_staging_cleanup.py' -v
 
 staging-preflight:
 	@test -n "$(STAGING_ENV_FILE)" || { \

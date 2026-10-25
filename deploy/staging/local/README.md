@@ -139,11 +139,12 @@ reviewed files. It then validates:
 
 The inherited storage initialization grants anonymous `s3:GetObject` only on
 legacy public-bucket objects. Listings, writes, and private reads remain denied.
-The cleanup worker explicitly disables the backend image's HTTP healthcheck
-because it runs no server. `start` uses Compose `--wait`, which requires this
-worker to be running, while the backend, frontend, storage, and database must
-be healthy. A running worker does not prove successful cleanup batches; monitor
-its logs and durable backlog as described in `../README.md`.
+The cleanup worker replaces the backend image's HTTP healthcheck with the
+explicit PID 1 process-only probe pinned in `../README.md`. `start` uses
+Compose `--wait`, including on Compose 2.35.1. Healthy cleanup status means
+only that PID 1 exists; batch success, progress, and durable backlog require
+separate monitoring of logs and backlog. The backend, frontend, storage, and
+database keep their own readiness checks.
 
 `migrate` repeats preflight and requires the root commit to be on
 `origin/development`. It then runs the single-writer job

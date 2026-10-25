@@ -281,11 +281,25 @@ then update root gitlinks in separate integration PRs.
 
 ## Cleanup worker status
 
-`media-cleanup` runs the periodic command loop without an HTTP server. Its
-Compose healthcheck explicitly disables the production backend image's HTTP
-probe. `up --wait` therefore checks that the worker process is running; it
-does not prove that cleanup batches succeed or that the worker is making
-progress. The worker still waits for backend readiness before starting and
-restarts unless stopped. Inspect its command logs and durable cleanup backlog
-to monitor successful work; individual batch failures are retried by the loop.
-This status contract applies to both external and local staging.
+`media-cleanup` replaces the production backend image's HTTP healthcheck with
+`CMD python -c 'import os; os.kill(1, 0)'`. Signal zero checks only that the
+actual container PID 1 exists and is accessible to the probe user. The probe
+runs every 10 seconds, with a 5-second timeout, 3 retries, and a 5-second start
+period. The shared validator pins this exact contract in external and local
+staging. An explicit probe supports Compose 2.35.1 `up --wait`; disabling the
+inherited probe still caused that version to reject production-image startup
+with `has no healthcheck configured`.
+
+Healthy means only process liveness. It does not prove successful cleanup
+batches, forward progress, or an acceptable backlog. Monitor command failures
+in the worker logs and the durable cleanup backlog separately; individual
+batch failures are retried by the loop. The worker still waits for backend
+readiness before starting and restarts unless stopped.
+
+`make test-staging-cleanup` exercises Compose 2.35.1 `up --wait` against an
+isolated non-root Python worker image with an inherited failing HTTP probe.
+It reproduces the disabled-probe failure and verifies that both rendered
+staging topologies become healthy with the explicit PID 1 probe, even when
+simulated batches fail. CI pins the Compose binary version and checksum.
+This compatibility fixture does not replace a full production-image startup
+rehearsal by the operator.
