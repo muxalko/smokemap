@@ -158,10 +158,14 @@ that disposable quick data, hence the exact project confirmation. It never
 reads another project's volumes. Verify the pre-backup submission/media state
 is restored and subsequent authenticated writes work.
 
+Backup, restore and rollback require the live foreground supervisor, because
+the reused helpers resume runtime after pausing writers. They cannot start an
+unsupervised public application from a stopped rehearsal.
+
 Within one unchanged connector generation, `rollback --release ID` selects a
 previously migrated compatible release by recorded image IDs. It does not
 reverse DB migrations. After connector loss, create a NEW generation/rebuild
-first and migrate/select that release before restore; the backend image must
+first, then migrate/select and `start` that release before restore; the backend image must
 still match the backup. Never reuse an old frontend with new public URLs.
 Keep the private home, credentials, local images and both volumes until the
 primary has completed recovery evidence. No cleanup of another local rehearsal

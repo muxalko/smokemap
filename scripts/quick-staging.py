@@ -330,6 +330,12 @@ def supervisor_alive(supervisor: dict | None) -> bool:
     return stat.exists() and stat.read_text().split()[21] == supervisor["proc_start"]
 
 
+def require_supervisor(home: Home) -> None:
+    if not supervisor_alive(api.load_state(home).get("supervisor")):
+        close_ingress(home)
+        fail("quick smoke/recovery requires the live foreground supervisor; ingress closed")
+
+
 def command_migrate(home: Home, release_id: str) -> None:
     if any(c["State"].get("Running") for name, c in runtime_inventory(home).items() if name in APP_SERVICES):
         fail("quick app writers must be stopped before the one-shot migration")
@@ -406,9 +412,7 @@ def public_request(origin: str, method: str, path: str, **options):
 def command_smoke(home: Home) -> None:
     settings, release, _, _ = preflight(home, home.release)
     api.require_migrated(api.load_state(home), release)
-    if not supervisor_alive(api.load_state(home).get("supervisor")):
-        close_ingress(home)
-        fail("quick public smoke requires the live foreground supervisor")
+    require_supervisor(home)
     app, media = settings["STAGING_APP_URL"], settings["STAGING_MEDIA_URL"]
     checks = []
     def check(name, origin, method, path, predicate, **options):
@@ -485,10 +489,13 @@ def main(argv=None) -> int:
             elif args.command == "releases":
                 api.command_releases(home)
             elif args.command == "backup":
+                require_supervisor(home)
                 api.command_backup(home)
             elif args.command == "restore":
+                require_supervisor(home)
                 api.command_restore(home, args.backup, args.confirm, True)
             elif args.command == "rollback":
+                require_supervisor(home)
                 api.command_rollback(home, args.release)
     except (OSError, ValueError, KeyError, TypeError, http.client.HTTPException, ValidationError) as error:
         # Do not stringify network/JSON exceptions: they can contain URLs/body.

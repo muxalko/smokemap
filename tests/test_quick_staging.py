@@ -208,6 +208,18 @@ class Lifecycle(unittest.TestCase):
                 operator.command_start(HOME)
             compose.assert_not_called()
 
+    def test_recovery_cannot_resume_unsupervised_apps(self):
+        for command in ("backup", "restore", "rollback"):
+            argv = ["--home", str(HOME.path), command]
+            if command == "restore":
+                argv += ["--backup", "20261025T120000Z", "--confirm", quick.PROJECT_NAME]
+            elif command == "rollback":
+                argv += ["--release", RELEASE]
+            with self.subTest(command=command), mock.patch.object(operator, "close_ingress") as close, mock.patch.object(api, f"command_{command}") as recovery, contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(operator.main(argv), 1)
+                close.assert_called_once_with(mock.ANY)
+                recovery.assert_not_called()
+
     def test_migration_rejects_running_writers(self):
         with mock.patch.object(operator, "runtime_inventory", return_value={"frontend": {"State": {"Running": True}}}), mock.patch.object(api, "command_migrate") as migrate:
             with self.assertRaisesRegex(quick.ValidationError, "writers must be stopped"):
