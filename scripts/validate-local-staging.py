@@ -54,6 +54,8 @@ EDGE_CONTAINER_PORT = 8443
 EDGE_HEALTH_LISTENER = "127.0.0.1:8081"
 EDGE_CONFIG_TARGET = "/etc/nginx/smokemap-local-staging.conf"
 EDGE_UPSTREAMS = {"http://frontend:3000", "http://storage:9000"}
+# nginx logs upstream failures at "error"; only levels above it are allowed.
+EDGE_ERROR_LOG_LEVELS = {"crit", "alert", "emerg"}
 LOOPBACK = "127.0.0.1"
 # Host ports the development stack in docker-compose.yaml publishes by default.
 DEVELOPMENT_PORTS = {3000, 5432, 8000, 9000, 9001}
@@ -377,6 +379,14 @@ def validate_edge_config(text: str) -> None:
         formats,
     ):
         fail("the local edge access log must omit query strings and credentials")
+    # Error messages quote the whole request line, so ordinary upstream
+    # failures ("error") must never be logged.
+    error_logs = re.findall(r"(?<![\w$])error_log\s+([^;]*);", config)
+    if not error_logs or any(
+        len(arguments.split()) != 2 or arguments.split()[1] not in EDGE_ERROR_LOG_LEVELS
+        for arguments in error_logs
+    ):
+        fail("the local edge error log must set an explicit crit, alert or emerg level")
 
 
 def validate_frontend_contract(

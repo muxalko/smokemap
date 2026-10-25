@@ -31,14 +31,25 @@ The edge selects each origin by TLS name and rejects any other name during
 the handshake. It preserves the exact `Host`, including the port, because MinIO
 verifies signed requests against it and the frontend checks server-action
 origins with it. It replaces client forwarding headers, sends
-`X-Forwarded-Proto: https`, and never logs query strings. Signed preview URLs
-and presigned form fields therefore stay out of logs.
+`X-Forwarded-Proto: https`, and never logs query strings. Its error log is
+limited to `crit` and above, because nginx quotes the full request line in
+request errors, including the ordinary `error`-level upstream failures. The
+access log still records every `502` and `504`, without the query. Signed
+preview URLs and presigned form fields therefore stay out of logs.
 
 ## Operator home
 
 Every command takes an absolute `LOCAL_STAGING_HOME` outside any Git working
-tree, for example `/var/lib/smokemap-local-staging` or
-`$HOME/.local/state/smokemap-local-staging`. `init` creates it:
+tree. A non-root operator should use a path under their own writable `$HOME`:
+
+```sh
+export LOCAL_STAGING_HOME="$HOME/.local/state/smokemap-local-staging"
+mkdir -p "$(dirname "$LOCAL_STAGING_HOME")"
+```
+
+`init` requires the parent to exist and creates the home itself. A system path
+such as `/var/lib/smokemap-local-staging` works only when the operator can
+write to its parent. The home contains:
 
 | Path | Contents | Mode |
 | --- | --- | --- |
@@ -79,7 +90,8 @@ Run the commands from a **clean** checkout of merged root `development` with
 initialized submodules (`make sync`):
 
 ```sh
-export LOCAL_STAGING_HOME=/var/lib/smokemap-local-staging
+export LOCAL_STAGING_HOME="$HOME/.local/state/smokemap-local-staging"
+mkdir -p "$(dirname "$LOCAL_STAGING_HOME")"
 make local-staging-init LOCAL_STAGING_HOME="$LOCAL_STAGING_HOME"
 make local-staging-build LOCAL_STAGING_HOME="$LOCAL_STAGING_HOME"
 make local-staging-releases LOCAL_STAGING_HOME="$LOCAL_STAGING_HOME"
@@ -196,7 +208,7 @@ start. They fail on:
 - `cloudflared`, a registry or mutable image, or a startup pull;
 - root application users or retained capabilities;
 - development project, volume or network names, and external resources;
-- edge routing to the backend, the console, or anything but the frontend and MinIO API, and edge logging of query strings or credentials;
+- edge routing to the backend, the console, or anything but the frontend and MinIO API, edge logging of query strings or credentials, and an edge error log below `crit`;
 - public or mismatched origins;
 - drift from the backend and frontend production contracts.
 

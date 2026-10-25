@@ -400,6 +400,28 @@ class EdgeConfigTests(unittest.TestCase):
             with self.subTest(replacement=replacement):
                 self.assert_config_rejected('"$request_method $uri"', f'"{replacement}"', "omit query strings")
 
+    def test_error_log_never_records_upstream_failures(self) -> None:
+        # Upstream failures are logged at "error" with the full request line.
+        directive = "error_log /dev/stderr crit;"
+        message = "explicit crit, alert or emerg level"
+        for replacement in (
+            "error_log /dev/stderr warn;",
+            "error_log /dev/stderr error;",
+            "error_log /dev/stderr notice;",
+            "error_log /dev/stderr info;",
+            "error_log /dev/stderr debug;",
+            "error_log /dev/stderr;",
+            "",
+        ):
+            with self.subTest(replacement=replacement):
+                self.assert_config_rejected(directive, replacement, message)
+        for level in ("alert", "emerg"):
+            with self.subTest(level=level):
+                local.validate_edge_config(self.text.replace(directive, f"error_log /dev/stderr {level};"))
+        for nested in ("server_tokens off;", "client_max_body_size 6m;", "return 404;"):
+            with self.subTest(nested=nested):
+                self.assert_config_rejected(nested, f"{nested} error_log /dev/stderr error;", message)
+
     def test_backend_or_console_upstream_is_rejected(self) -> None:
         for upstream in ("http://api.smokemap-staging.internal:8000", "http://storage:9001", "http://db:5432"):
             with self.subTest(upstream=upstream):
