@@ -174,15 +174,30 @@ class StagingStructureTests(unittest.TestCase):
         ):
             validate_staging.validate_structure(config, allow_placeholders=True)
 
-    def test_cleanup_must_disable_the_inherited_web_probe(self) -> None:
-        self.assertEqual(self.config["services"]["media-cleanup"]["healthcheck"], {"disable": True})
-        for healthcheck in (None, {}, {"disable": False},
-                            self.config["services"]["backend"]["healthcheck"]):
-            config = copy.deepcopy(self.config)
-            config["services"]["media-cleanup"]["healthcheck"] = healthcheck
-            with self.assertRaisesRegex(validate_staging.ValidationError,
-                                        "media-cleanup must explicitly disable"):
-                validate_staging.validate_structure(config, allow_placeholders=True)
+    def test_cleanup_requires_the_exact_pid_one_process_probe(self) -> None:
+        expected = {
+            "test": ["CMD", "python", "-c", "import os; os.kill(1, 0)"],
+            "interval": "10s", "timeout": "5s", "retries": 3, "start_period": "5s",
+        }
+        self.assertEqual(self.config["services"]["media-cleanup"]["healthcheck"], expected)
+        invalid = [None, {}, {"disable": True}, {"disable": False},
+                   self.config["services"]["backend"]["healthcheck"]]
+        for key, value in (
+            ("test", ["NONE"]),
+            ("test", ["CMD", "python", "-c", "import os; os.kill(os.getpid(), 0)"]),
+            ("disable", True), ("interval", "1h"), ("timeout", "1m"),
+            ("retries", 0), ("start_period", "1h"),
+        ):
+            invalid.append({**expected, key: value})
+        for healthcheck in invalid:
+            with self.subTest(healthcheck=healthcheck):
+                config = copy.deepcopy(self.config)
+                config["services"]["media-cleanup"]["healthcheck"] = healthcheck
+                with self.assertRaisesRegex(
+                    validate_staging.ValidationError,
+                    "media-cleanup must use the exact PID 1 process-only healthcheck",
+                ):
+                    validate_staging.validate_structure(config, allow_placeholders=True)
 
     def test_anonymous_policy_drift_is_rejected(self) -> None:
         for old, new in (

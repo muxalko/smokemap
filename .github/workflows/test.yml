@@ -22,6 +22,16 @@ jobs:
       - run: make check-local-staging
       - name: Verify fresh staging PostGIS visibility and GIS DDL
         run: make test-staging-postgis
+      - name: Verify cleanup wait compatibility with Compose 2.35.1
+        shell: bash
+        run: |
+          compose_binary="$RUNNER_TEMP/docker-compose-2.35.1"
+          curl --fail --silent --show-error --location \
+            https://github.com/docker/compose/releases/download/v2.35.1/docker-compose-linux-x86_64 \
+            --output "$compose_binary"
+          echo "7bdb2ce2916e5dd0354e5d129892bf96fdcdb1a9ab8eed69b9173e131db4c230  $compose_binary" | sha256sum --check
+          chmod +x "$compose_binary"
+          COMPOSE_235_BINARY="$compose_binary" make test-staging-cleanup
 
   viewport-pan:
     runs-on: ubuntu-latest
