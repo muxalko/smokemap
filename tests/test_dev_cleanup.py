@@ -101,8 +101,11 @@ class RunnerTests(unittest.TestCase):
             try:
                 if predicate():
                     return
-            except FileNotFoundError:
-                pass  # Fresh-start invalidation intentionally removes the old file.
+            except (FileNotFoundError, worker.StateError):
+                # Startup/atomic replacement may unlink the file after open;
+                # the store correctly rejects its now-zero link count. Retry
+                # within this bounded wait; persistent invalid state still fails.
+                pass
             time.sleep(.02)
         self.fail('Timed out waiting for disposable cleanup fixture')
 
@@ -151,7 +154,7 @@ class RunnerTests(unittest.TestCase):
         state = self.store.read()
         self.assertIsNotNone(state['last_success_at'])
         self.assertTrue(worker.healthy(self.store))
-        self.assertFalse(worker.healthy(self.store, now=state['deadline'] + .01))
+        self.assertFalse(worker.healthy(self.store, elapsed_now=state['deadline_elapsed'] + .01))
         self.until(lambda: self.reason('timeout'))
         self.assertFalse(worker.healthy(self.store))
         self.assertIsNone(self.store.read()['last_success_at'])
@@ -231,11 +234,15 @@ class RunnerTests(unittest.TestCase):
     def seed_success(self):
         self.store.prepare()
         now = time.time()
-        value = {'version': 1, 'pid': os.getpid(),
+        elapsed = worker.elapsed_time()
+        duration = worker.config()[1] + worker.SCHEDULING_GRACE
+        value = {'version': 2, 'pid': os.getpid(),
                  'process_start': worker.process_start(os.getpid()),
                  'started_at': now - 1, 'updated_at': now,
                  'last_success_at': now, 'phase': 'waiting',
-                 'deadline': now + worker.config()[1] + worker.SCHEDULING_GRACE}
+                 'deadline': now + duration, 'started_elapsed': elapsed - 1,
+                 'updated_elapsed': elapsed, 'last_success_elapsed': elapsed,
+                 'deadline_elapsed': elapsed + duration}
         self.store.write(value)
         return value
 
@@ -282,27 +289,125 @@ class RunnerTests(unittest.TestCase):
 
     def test_health_strict_schema_time_and_process_identity(self):
         baseline = self.seed_success()
-        mutations = [dict(version=True), dict(version=2), dict(extra='unknown'),
+        mutations = [dict(version=True), dict(version=1), dict(extra='unknown'),
                      dict(pid=True), dict(pid=2147483647), dict(process_start=1),
                      dict(last_success_at=None), dict(phase='starting'), dict(phase='failed'),
                      dict(updated_at=float('nan')), dict(updated_at='123'),
-                     dict(started_at=baseline['updated_at'] + 1),
-                     dict(updated_at=baseline['updated_at'] + 100),
-                     dict(deadline=baseline['deadline'] + 100)]
+                     dict(started_elapsed=baseline['updated_elapsed'] + 1),
+                     dict(updated_elapsed=baseline['updated_elapsed'] + 100),
+                     dict(deadline_elapsed=baseline['deadline_elapsed'] + 100)]
+        for key in ('started_elapsed', 'updated_elapsed', 'last_success_elapsed',
+                    'deadline_elapsed'):
+            mutations.extend({key: item} for item in (None, True, '123', 0, -1,
+                                                      float('nan'), float('inf')))
         for change in mutations:
             with self.subTest(change=change):
                 # JSON with NaN deliberately bypasses the safe writer.
                 (self.state_dir / 'status.json').write_text(json.dumps({**baseline, **change}))
                 self.assertFalse(worker.healthy(self.store))
         self.store.write(baseline)
-        self.assertFalse(worker.healthy(self.store, now=baseline['deadline'] + .01))
-        running = {**baseline, 'phase': 'running', 'deadline': baseline['updated_at'] + worker.config()[2]}
+        self.assertFalse(worker.healthy(self.store, elapsed_now=baseline['deadline_elapsed'] + .01))
+        running = {**baseline, 'phase': 'running',
+                   'deadline': baseline['updated_at'] + worker.config()[2],
+                   'deadline_elapsed': baseline['updated_elapsed'] + worker.config()[2]}
         self.store.write(running)
         self.assertTrue(worker.healthy(self.store))
-        self.assertFalse(worker.healthy(self.store, now=running['deadline'] + .01))
-        running['last_success_at'] -= 400
+        self.assertFalse(worker.healthy(self.store, elapsed_now=running['deadline_elapsed'] + .01))
+        running['last_success_elapsed'] -= 400
         self.store.write(running)
         self.assertFalse(worker.healthy(self.store))
+
+    def test_unchanged_stale_snapshot_cannot_revive_after_wall_rewind(self):
+        with patch.dict(os.environ, {'MEDIA_CLEANUP_INTERVAL_SECONDS': '300'}):
+            baseline = self.seed_success()
+            wall = baseline['last_success_at']
+            elapsed = baseline['last_success_elapsed']
+            self.assertEqual(baseline['deadline'], wall + 315)
+            for age, wall_offset, expected in ((200, 200, True), (600, 600, False),
+                                               (600, 200, False), (601, 201, False)):
+                with self.subTest(age=age, wall_offset=wall_offset):
+                    with patch.object(worker.time, 'time', return_value=wall + wall_offset), \
+                            patch.object(worker, 'elapsed_time', return_value=elapsed + age):
+                        self.assertEqual(worker.healthy(self.store), expected)
+                    self.assertEqual(self.store.read(), baseline)
+
+    def test_health_elapsed_boundaries_ignore_wall_adjustments(self):
+        with patch.dict(os.environ, {'MEDIA_CLEANUP_INTERVAL_SECONDS': '300',
+                                     'MEDIA_CLEANUP_TIMEOUT_SECONDS': '120'}):
+            baseline = self.seed_success()
+            success = baseline['last_success_elapsed']
+            running = {**baseline, 'phase': 'running',
+                       'updated_elapsed': success + 315, 'deadline_elapsed': success + 435}
+            stale_retry = {**running, 'updated_elapsed': success + 315.01,
+                           'deadline_elapsed': success + 435.01}
+            for value, ages in ((baseline, ((315, True), (315.01, False))),
+                                (running, ((315, True), (435, True), (435.01, False))),
+                                (stale_retry, ((315.01, False), (400, False)))):
+                self.store.write(value)
+                for age, expected in ages:
+                    for wall_shift in (-100000, 0, 100000):
+                        with self.subTest(phase=value['phase'], age=age, wall_shift=wall_shift):
+                            with patch.object(worker.time, 'time', return_value=time.time() + wall_shift), \
+                                    patch.object(worker, 'elapsed_time', return_value=success + age):
+                                self.assertEqual(worker.healthy(self.store), expected)
+
+    def test_old_wall_only_schema_is_rejected(self):
+        value = self.seed_success()
+        value = {key: item for key, item in value.items() if not key.endswith('_elapsed')}
+        value['version'] = 1
+        self.store.write(value)
+        self.assertFalse(worker.healthy(self.store))
+
+    def test_runner_invalidates_elapsed_staleness_before_batch_and_requires_new_success(self):
+        # Exercise the real loop without waiting minutes or adjusting the host clock.
+        # Include the exact 600 elapsed / +200 wall case and both scheduling edges.
+        for delay, wall_shift in ((600, 200), (315.01, -400), (315.01, 100000),
+                                  (315, -400), (300, 100000)):
+            with self.subTest(delay=delay, wall_shift=wall_shift):
+                clock = {'elapsed': 1000, 'wall': 10000}
+                handlers = {}
+                batches = []
+                sleeps = []
+                def sleep(_duration):
+                    clock['elapsed'] += delay if not sleeps else 300
+                    clock['wall'] += wall_shift if not sleeps else 300
+                    sleeps.append(True)
+                def command(arguments, _timeout, _stopping):
+                    if arguments == ['check']:
+                        return 'ok', b''
+                    value = self.store.read()
+                    batches.append(value)
+                    if len(batches) == 1:
+                        self.assertFalse(worker.healthy(self.store))
+                        return 'ok', SUMMARY.encode()
+                    if len(batches) == 2:
+                        fresh = delay <= 315
+                        self.assertEqual(worker.healthy(self.store), fresh)
+                        self.assertEqual(value['last_success_at'] is not None, fresh)
+                        self.assertEqual(value['last_success_elapsed'] is not None, fresh)
+                        return 'command_exit', None
+                    if len(batches) == 3:
+                        self.assertFalse(worker.healthy(self.store))
+                        self.assertIsNone(value['last_success_elapsed'])
+                        return 'ok', SUMMARY.encode()
+                    self.assertTrue(worker.healthy(self.store))
+                    self.assertGreater(value['last_success_elapsed'], 1000)
+                    handlers[signal.SIGTERM](signal.SIGTERM, None)
+                    return 'shutdown', None
+                with patch.dict(os.environ, {'MEDIA_CLEANUP_INTERVAL_SECONDS': '300'}), \
+                        patch.object(worker, 'elapsed_time', side_effect=lambda: clock['elapsed']), \
+                        patch.object(worker.time, 'time', side_effect=lambda: clock['wall']), \
+                        patch.object(worker.time, 'monotonic', side_effect=lambda: clock['elapsed']), \
+                        patch.object(worker.time, 'sleep', side_effect=sleep), \
+                        patch.object(worker.signal, 'signal', side_effect=lambda sig, fn: handlers.update({sig: fn})), \
+                        patch.object(worker, 'command', side_effect=command), \
+                        patch.object(worker, 'event') as events:
+                    self.assertEqual(worker.run(self.state_dir), 0)
+                self.assertEqual(len(batches), 4)
+                outcomes = [call.args[1] for call in events.call_args_list if call.args[0] == 'batch']
+                self.assertEqual(outcomes, ['success', 'failure', 'recovered'])
+                self.assertIsNone(self.store.read()['last_success_elapsed'])
+                self.assertFalse(worker.healthy(self.store))
 
     def test_missing_wrong_unreadable_oversized_duplicate_symlink_state(self):
         self.assertFalse(worker.healthy(self.store))

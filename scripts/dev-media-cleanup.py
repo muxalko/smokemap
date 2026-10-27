@@ -27,7 +27,8 @@ OUTPUT_LIMIT = 65536
 SCHEDULING_GRACE = 15
 SHUTDOWN_GRACE = 2
 STATE_KEYS = {'version', 'pid', 'process_start', 'started_at', 'updated_at',
-              'last_success_at', 'phase', 'deadline'}
+              'last_success_at', 'phase', 'deadline', 'started_elapsed',
+              'updated_elapsed', 'last_success_elapsed', 'deadline_elapsed'}
 
 
 class InvalidOutput(Exception):
@@ -170,24 +171,32 @@ class Store:
         return json.loads(raw, object_pairs_hook=unique)
 
 
-def healthy(store, now=None):
+def elapsed_time():
+    # Linux boot-relative clock shared by runner/probe, including suspended time.
+    # Wall-clock adjustments cannot move this clock backwards or revive status.
+    return time.clock_gettime(time.CLOCK_BOOTTIME)
+
+
+def healthy(store, elapsed_now=None):
     try:
         _, interval, timeout = config()
         value = store.read()
         if not isinstance(value, dict) or set(value) != STATE_KEYS:
             return False
-        if type(value['version']) is not int or value['version'] != 1:
+        if type(value['version']) is not int or value['version'] != 2:
             return False
         for key in ('pid', 'process_start'):
             if type(value[key]) is not int or value[key] <= 0:
                 return False
-        for key in ('started_at', 'updated_at', 'last_success_at', 'deadline'):
+        for key in ('started_at', 'updated_at', 'last_success_at', 'deadline',
+                    'started_elapsed', 'updated_elapsed', 'last_success_elapsed',
+                    'deadline_elapsed'):
             item = value[key]
             if type(item) not in (int, float) or not math.isfinite(item) or item <= 0:
                 return False
-        now = time.time() if now is None else now
+        now = elapsed_time() if elapsed_now is None else elapsed_now
         started, updated, success, deadline = (value[key] for key in
-            ('started_at', 'updated_at', 'last_success_at', 'deadline'))
+            ('started_elapsed', 'updated_elapsed', 'last_success_elapsed', 'deadline_elapsed'))
         if not started <= success <= updated <= now <= deadline:
             return False
         if process_start(value['pid']) != value['process_start']:
@@ -268,14 +277,26 @@ def run(directory=STATE_DIRECTORY):
     signal.signal(signal.SIGINT, stop)
     store = Store(directory)
     started = time.time()
-    state = {'version': 1, 'pid': os.getpid(), 'process_start': process_start(os.getpid()),
+    started_elapsed = elapsed_time()
+    state = {'version': 2, 'pid': os.getpid(), 'process_start': process_start(os.getpid()),
              'started_at': started, 'updated_at': started, 'last_success_at': None,
-             'phase': 'starting', 'deadline': started}
+             'phase': 'starting', 'deadline': started, 'started_elapsed': started_elapsed,
+             'updated_elapsed': started_elapsed, 'last_success_elapsed': None,
+             'deadline_elapsed': started_elapsed}
     def write(phase, duration, success=False):
         now = time.time()
-        state.update(phase=phase, updated_at=now, deadline=now + duration)
+        elapsed = elapsed_time()
+        # Use the same elapsed sample for invalidation and the new deadline.
+        # Never extend a stale success into a new healthy running deadline.
+        if (phase == 'running' and state['last_success_elapsed'] is not None
+                and elapsed > state['deadline_elapsed']):
+            state['last_success_at'] = None
+            state['last_success_elapsed'] = None
+        state.update(phase=phase, updated_at=now, deadline=now + duration,
+                     updated_elapsed=elapsed, deadline_elapsed=elapsed + duration)
         if success:
             state['last_success_at'] = now
+            state['last_success_elapsed'] = elapsed
         store.write(state)
     try:
         store.prepare()
@@ -294,10 +315,6 @@ def run(directory=STATE_DIRECTORY):
         event('startup', 'success', 'system_check')
         failed = False
         while not stopping():
-            # Never extend a stale success into a new healthy running deadline.
-            if (state['last_success_at'] is not None and
-                    time.time() > state['deadline']):
-                state['last_success_at'] = None
             write('running', timeout)
             reason, output = command(['process_media_cleanup', '--batch-size', str(batch)],
                                      timeout, stopping)
@@ -317,6 +334,7 @@ def run(directory=STATE_DIRECTORY):
                 failed = False
             else:
                 state['last_success_at'] = None
+                state['last_success_elapsed'] = None
                 write('failed', interval)
                 event('batch', 'failure', reason, counts)
                 failed = True
@@ -324,6 +342,7 @@ def run(directory=STATE_DIRECTORY):
             while not stopping() and time.monotonic() < wake:
                 time.sleep(min(.1, max(0, wake - time.monotonic())))
         state['last_success_at'] = None
+        state['last_success_elapsed'] = None
         write('stopped', 0)
         event('shutdown', 'stopped', 'shutdown')
         return 0

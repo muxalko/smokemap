@@ -50,10 +50,19 @@ After success, waiting health lasts the interval plus a fixed 15-second
 scheduling allowance. A subsequent running batch may retain health only if
 that success was still fresh when it began and only until the batch's own
 bounded deadline. Health rejects future timestamps, stale success, exceeded
-deadlines and inconsistent timestamp ordering. Runtime deadlines use a
-monotonic clock; unsafe wall-clock jumps fail health closed. A failed batch
-clears the success marker immediately. Its next running retry remains
-unhealthy until it actually succeeds.
+deadlines and inconsistent timestamp ordering **in the elapsed clock domain**.
+Health freshness uses Linux `CLOCK_BOOTTIME`, a monotonic boot-relative clock
+shared by the runner and separate probe processes that also counts suspended
+time. Both waiting freshness and running deadlines use this clock, and the
+runner clears an expired success before publishing a new running deadline.
+For example, an unchanged success with a 315-second waiting budget remains
+unhealthy after 600 elapsed seconds even if the wall clock rewinds 400 seconds.
+Wall-clock adjustments in either direction do not affect freshness; wall
+timestamps are diagnostic only, so their order can change across writes.
+Command timeouts and retry sleeps continue to use `time.monotonic()`.
+A failed batch clears the success markers immediately. Its next running retry
+remains unhealthy until it actually succeeds. Expired success likewise cannot
+restore health without a new successful batch.
 
 ## Status and failure handling
 
@@ -66,10 +75,15 @@ unreadable file, oversized file, duplicate key or non-allowlisted schema is
 unhealthy. A staging file is never trusted or reused. Failed status writes
 stop the runner with a generic event and best-effort invalidation, rather
 than continuing cleanup without reporting. Private status contains only the
-exact version-1 keys `version`, `pid`, `process_start` (Linux start ticks),
-`started_at`, `updated_at`, `last_success_at`, `phase`, and `deadline`.
-Timestamp values are finite epoch seconds; `last_success_at` is null until
-success and after failure. Starting, failed and stopped phases are unhealthy.
+exact version-2 keys `version`, `pid`, `process_start` (Linux start ticks),
+`started_at`, `updated_at`, `last_success_at`, `phase`, `deadline`,
+`started_elapsed`, `updated_elapsed`, `last_success_elapsed`, and
+`deadline_elapsed`. The `*_at` fields and `deadline` are finite epoch seconds;
+the elapsed fields are finite boot-relative seconds. Both last-success fields
+are null until success, after failure, and when expired success is invalidated
+before a new batch. Starting, failed and stopped phases are unhealthy.
+The probe rejects the old wall-only schema; a runner restart discards old
+ephemeral status and requires a new successful batch.
 The probe independently binds status to the currently existing Linux process
 and its start ticks. Every start invalidates previous status before checking
 configuration or running Django, so an old success cannot bless a fresh run.
@@ -133,8 +147,11 @@ alert routing is separate and has not been configured by this change.
 
 `make test-dev-cleanup` runs Python-stdlib tests with fake `manage.py` children
 and disposable private temp directories: successful work, failure/recovery,
-startup, stale/future/malformed health, configuration, output parsing and
-bounds, failed counts despite exit zero, timeouts, descendant shutdown,
+startup, stale/future/malformed health, unchanged stale snapshots across wall
+rewinds, forward/backward wall adjustments, elapsed waiting/running/retry
+boundaries, stale-success invalidation and genuine-batch recovery,
+configuration, output parsing and bounds, failed counts despite exit zero,
+timeouts, descendant shutdown,
 private atomic state, statestore failure and secret redaction. It is part of
 `make test` and required root `integration` CI. No DB, storage or host packages
 are needed.
