@@ -17,6 +17,7 @@ jobs:
         with:
           submodules: recursive
       - run: git submodule status
+      - run: make test-dev-cleanup
       - run: make check-compose
       - run: make check-staging
       - run: make check-local-staging
@@ -53,7 +54,7 @@ jobs:
             --output "$compose_binary"
           echo "7bdb2ce2916e5dd0354e5d129892bf96fdcdb1a9ab8eed69b9173e131db4c230  $compose_binary" | sha256sum --check
           chmod +x "$compose_binary"
-          COMPOSE_235_BINARY="$compose_binary" make test-staging-cleanup
+          COMPOSE_235_BINARY="$compose_binary" make test-staging-cleanup test-dev-cleanup-compose
 
   viewport-pan:
     runs-on: ubuntu-latest

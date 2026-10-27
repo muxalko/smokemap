@@ -19,6 +19,8 @@ DJANGO_SECRET_KEY=validation-django-secret \
 NEXTAUTH_SECRET=validation-nextauth-secret \
 MEDIA_CLEANUP_BATCH_SIZE= \
 MEDIA_CLEANUP_INTERVAL_SECONDS= \
+MEDIA_CLEANUP_TIMEOUT_SECONDS= \
+MEDIA_CLEANUP_HEALTH_START_PERIOD= \
   docker compose config --format json >"$default_compose_config_file"
 
 POSTGRES_PASSWORD=validation-password \
@@ -31,6 +33,8 @@ DJANGO_SECRET_KEY=validation-django-secret \
 NEXTAUTH_SECRET=validation-nextauth-secret \
 MEDIA_CLEANUP_BATCH_SIZE=17 \
 MEDIA_CLEANUP_INTERVAL_SECONDS=29 \
+MEDIA_CLEANUP_TIMEOUT_SECONDS=37 \
+MEDIA_CLEANUP_HEALTH_START_PERIOD=84s \
   docker compose config --format json >"$compose_config_file"
 
 require_literal() {
@@ -106,8 +110,18 @@ require_cleanup_source 'build: *backend-build' \
   "cleanup does not use the backend build"
 require_cleanup_source '<<: *backend-environment' \
   "cleanup does not inherit the backend runtime environment"
-require_cleanup_source 'volumes: *backend-volumes' \
+require_cleanup_source '- ./smokemap-django-backend:/app' \
   "cleanup does not use the backend source mount"
+require_cleanup_source '- ./scripts/dev-media-cleanup.py:/opt/smokemap-dev-media-cleanup.py:ro' \
+  "cleanup runner is not mounted read-only"
+require_cleanup_source 'command: ["python", "/opt/smokemap-dev-media-cleanup.py", "run"]' \
+  "canonical development cleanup runner changed"
+require_cleanup_source 'test: ["CMD", "python", "/opt/smokemap-dev-media-cleanup.py", "health"]' \
+  "cleanup does not override inherited probes with progress health"
+require_cleanup_source '/tmp:rw,noexec,nosuid,size=16m,mode=1777' \
+  "cleanup status is not ephemeral"
+require_cleanup_source 'stop_grace_period: 10s' \
+  "cleanup shutdown grace changed"
 require_cleanup_source 'condition: service_healthy' \
   "cleanup does not wait for backend health"
 require_cleanup_source 'restart: unless-stopped' \
@@ -157,10 +171,54 @@ require_literal '"MEDIA_CLEANUP_BATCH_SIZE": "17"' \
   "cleanup batch override was not rendered"
 require_literal '"MEDIA_CLEANUP_INTERVAL_SECONDS": "29"' \
   "cleanup interval override was not rendered"
-require_literal 'python manage.py process_media_cleanup --batch-size \"$${MEDIA_CLEANUP_BATCH_SIZE}\"' \
-  "periodic cleanup command is not wired"
-require_literal 'sleep \"$${MEDIA_CLEANUP_INTERVAL_SECONDS}\"' \
-  "cleanup interval is not wired"
+require_default_literal '"MEDIA_CLEANUP_TIMEOUT_SECONDS": "120"' \
+  "cleanup timeout default changed"
+require_default_literal '"start_period": "4m10s"' \
+  "cleanup startup grace default changed"
+require_literal '"MEDIA_CLEANUP_TIMEOUT_SECONDS": "37"' \
+  "cleanup timeout override was not rendered"
+require_literal '"start_period": "1m24s"' \
+  "cleanup startup grace override was not rendered"
 require_literal '"media-cleanup": {' "media-cleanup service is missing"
+
+python3 -I - "$compose_config_file" "$default_compose_config_file" <<'PYTHON'
+import json
+import sys
+
+def validate(path, start_period, expected_config):
+    with open(path) as stream:
+        services = json.load(stream)["services"]
+    worker = services["media-cleanup"]
+    for key, expected in zip(("MEDIA_CLEANUP_BATCH_SIZE", "MEDIA_CLEANUP_INTERVAL_SECONDS",
+                              "MEDIA_CLEANUP_TIMEOUT_SECONDS"), expected_config):
+        assert worker["environment"][key] == expected
+        assert key not in services["backend"]["environment"]
+    assert worker["command"] == ["python", "/opt/smokemap-dev-media-cleanup.py", "run"]
+    assert worker["healthcheck"] == {
+        "test": ["CMD", "python", "/opt/smokemap-dev-media-cleanup.py", "health"],
+        "interval": "5s", "timeout": "3s", "retries": 1, "start_period": start_period,
+    }
+    assert worker["restart"] == "unless-stopped" and not worker.get("ports")
+    assert worker["depends_on"]["backend"]["condition"] == "service_healthy"
+    mounts = {v["target"]: v for v in worker["volumes"]}
+    assert set(mounts) == {"/app", "/opt/smokemap-dev-media-cleanup.py"}
+    assert mounts["/app"]["source"] == next(
+        v["source"] for v in services["backend"]["volumes"] if v["target"] == "/app")
+    runner = mounts["/opt/smokemap-dev-media-cleanup.py"]
+    assert runner["type"] == "bind" and runner["read_only"] is True
+    assert runner["source"].endswith("/scripts/dev-media-cleanup.py")
+    assert worker["tmpfs"] == ["/tmp:rw,noexec,nosuid,size=16m,mode=1777"]
+    for name in ("backend", "frontend"):
+        assert not any(v["target"] == "/opt/smokemap-dev-media-cleanup.py"
+                       for v in services[name]["volumes"])
+        assert "media-cleanup" not in services[name].get("depends_on", {})
+    assert worker["stop_grace_period"] == "10s"
+
+try:
+    validate(sys.argv[1], "1m24s", ("17", "29", "37"))
+    validate(sys.argv[2], "4m10s", ("100", "300", "120"))
+except (AssertionError, KeyError, TypeError, ValueError, StopIteration):
+    sys.exit("Compose validation failed: development cleanup contract")
+PYTHON
 
 echo "Compose media storage and cleanup wiring is valid."

@@ -135,38 +135,26 @@ services:
   media-cleanup:
     build: *backend-build
     init: true
-    command:
-      - /bin/sh
-      - -c
-      - |
-        set -eu
-        case "$${MEDIA_CLEANUP_BATCH_SIZE}" in
-          ''|*[!0-9]*|0)
-            echo "MEDIA_CLEANUP_BATCH_SIZE must be a positive integer." >&2
-            exit 64
-            ;;
-        esac
-        case "$${MEDIA_CLEANUP_INTERVAL_SECONDS}" in
-          ''|*[!0-9]*|0)
-            echo "MEDIA_CLEANUP_INTERVAL_SECONDS must be a positive integer." >&2
-            exit 64
-            ;;
-        esac
-        python manage.py check
-        while true; do
-          if python manage.py process_media_cleanup --batch-size "$${MEDIA_CLEANUP_BATCH_SIZE}"; then
-            :
-          else
-            cleanup_status=$$?
-            echo "Media cleanup iteration failed with status $${cleanup_status}; retrying after $${MEDIA_CLEANUP_INTERVAL_SECONDS}s." >&2
-          fi
-          sleep "$${MEDIA_CLEANUP_INTERVAL_SECONDS}"
-        done
+    command: ["python", "/opt/smokemap-dev-media-cleanup.py", "run"]
     environment:
       <<: *backend-environment
       MEDIA_CLEANUP_BATCH_SIZE: ${MEDIA_CLEANUP_BATCH_SIZE:-100}
       MEDIA_CLEANUP_INTERVAL_SECONDS: ${MEDIA_CLEANUP_INTERVAL_SECONDS:-300}
-    volumes: *backend-volumes
+      MEDIA_CLEANUP_TIMEOUT_SECONDS: ${MEDIA_CLEANUP_TIMEOUT_SECONDS:-120}
+    volumes:
+      - ./smokemap-django-backend:/app
+      - ./scripts/dev-media-cleanup.py:/opt/smokemap-dev-media-cleanup.py:ro
+    # Private status is ephemeral; the runner creates its own UID-owned 0700 dir.
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "/opt/smokemap-dev-media-cleanup.py", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 1
+      # Two default 120s budgets (Django check + first batch), plus scheduling.
+      start_period: ${MEDIA_CLEANUP_HEALTH_START_PERIOD:-250s}
+    stop_grace_period: 10s
     depends_on:
       backend:
         condition: service_healthy

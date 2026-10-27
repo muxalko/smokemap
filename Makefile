@@ -95,7 +95,7 @@ check-backend:
 check-frontend:
 	docker compose exec -T frontend yarn run check
 
-test: test-backend test-frontend
+test: test-dev-cleanup test-backend test-frontend
 
 test-backend:
 	docker compose exec -T -e POSTGRES_OPTIONS="-c search_path=public" backend python manage.py test --keepdb
@@ -206,3 +206,11 @@ codegen:
 check-quick-staging:
 	python3 scripts/validate-quick-staging.py --template
 	python3 -m unittest discover -s tests -p 'test_quick_staging.py' -v
+
+# Python stdlib only; no Docker, database or storage.
+.PHONY: test-dev-cleanup test-dev-cleanup-compose
+test-dev-cleanup:
+	python3 -m unittest discover -s tests -p 'test_dev_cleanup.py' -v
+
+test-dev-cleanup-compose:
+	python3 -m unittest discover -s tests -p 'test_dev_cleanup_compose.py' -v

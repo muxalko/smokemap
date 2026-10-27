@@ -35,14 +35,20 @@ policy is reset to private whenever `storage-init` runs. The backend uses
 `http://storage:9000` for private object operations and signs browser uploads
 against `http://localhost:${MINIO_API_PORT:-9000}`.
 
-The `media-cleanup` service waits for a healthy backend and periodically runs
-the backend's durable cleanup command. `MEDIA_CLEANUP_BATCH_SIZE` (default
-`100`) controls each batch and `MEDIA_CLEANUP_INTERVAL_SECONDS` (default `300`)
-controls the delay between attempts. An individual command failure is logged
-and retried after the interval; invalid loop configuration fails at startup.
+The development `media-cleanup` service waits for a healthy backend, runs
+Django checks, and supervises the existing durable cleanup command. Its
+healthcheck requires real successful batch progress and reports command,
+count-protocol and timeout failures. Batches default to 100, retries to 300
+seconds, and each check/batch has a configurable 120-second deadline. Failed
+batches retry; Docker unhealthy alone does not restart a running worker.
+Structured events contain only fixed reason codes, timestamps and numeric
+counts; child diagnostics are discarded. No external alerts are configured.
+See [development cleanup supervision](docs/DEV_MEDIA_CLEANUP.md) for knobs,
+health timing, private ephemeral state, redaction and recovery commands.
 No cleanup port is published, and the API/frontend do not depend on this
-service. Use `make check-compose` to validate the bucket policies, split
-endpoints, and cleanup wiring without starting the stack.
+service. `make check-compose` validates the rendered contract;
+`make test-dev-cleanup` runs isolated Python-stdlib regressions. Staging/local/
+Quick runners retain their existing health and execution contracts.
 
 ## Cross-application viewport test
 
