@@ -2,7 +2,19 @@
 
 Status: Active planning document
 
-Last updated: 2026-10-08
+Last updated: 2026-10-26 (client decision date)
+
+Per-task M5 development gate (client decision, 2026-10-26): complete one task
+at a time, review its exact revision, deploy that reviewed release to
+DEVELOPMENT, and pass feature/authentication and cross-application regression
+checks before advancing. Follow [Development verification](DEVELOPMENT_VERIFICATION.md)
+for frozen release checkouts, recovery, evidence, and separate promotion gates.
+The first integration is the visible logout feature
+[frontend #71](https://github.com/muxalko/smokemap-webapp/issues/71), merged in
+[frontend PR #72](https://github.com/muxalko/smokemap-webapp/pull/72), through
+[root #126](https://github.com/muxalko/smokemap/issues/126).
+Source integration and isolated preview do not demonstrate deployment or a
+passed DEVELOPMENT gate. M5 remains **Current** with its existing requirements.
 
 Temporary rehearsal path (2026-10-25): the explicit
 [two-Quick-Tunnel operator](../deploy/staging/quick/README.md) prepares an
