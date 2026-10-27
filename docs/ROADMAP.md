@@ -23,6 +23,13 @@ image IDs. It leaves local/external staging contracts unchanged. Preparation
 and CI are not launch or product/recovery evidence; the primary operator owns
 that temporary public rehearsal. M5 deployment blockers remain open.
 
+Development orchestration follow-up (root #130, linked backend #55):
+[cleanup supervision](DEV_MEDIA_CLEANUP.md) adds bounded development command
+execution, redacted events and batch-progress health without changing the
+backend cleanup/expiry policy, application revisions or staging/local/Quick
+contracts. Source tests and CI wiring do not constitute frozen DEVELOPMENT
+release deployment, independent review or external alert-routing evidence.
+
 Evidence base:
 
 - [Joint architecture and engineering assessment](ARCHITECTURE_ASSESSMENT.md)

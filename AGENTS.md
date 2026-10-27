@@ -85,8 +85,9 @@ Browser API reads use same-origin paths (`/api/smokemap/graphql` and `/api/smoke
 `MINIO_BUCKET` remains the legacy anonymously downloadable image bucket.
 `MINIO_PRIVATE_MEDIA_BUCKET` names a separate anonymous-private bucket for M3
 source objects; `storage-init` refuses to use the same name for both. The
-periodic cleanup batch size and interval are safe local knobs documented in
-`.env.example`.
+periodic cleanup batch size, interval, finite command timeout and startup
+health grace are safe local knobs documented in `.env.example` and
+`docs/DEV_MEDIA_CLEANUP.md`.
 
 The backend accepts both `http://localhost:<frontend-port>` and `http://127.0.0.1:<frontend-port>` as local CORS/CSRF origins. Compose derives these origins from `FRONTEND_PORT`; keep the Django origin configuration aligned if another browser hostname is introduced.
 
@@ -204,7 +205,7 @@ After infrastructure or dependency changes, verify all of the following:
 1. `make check-compose` succeeds (including `docker compose config --quiet`).
 2. `make dev-detached` exits successfully.
 3. `make ps` shows `db`, `storage`, `backend` and `frontend` healthy and
-   `media-cleanup` running; `storage-init` must exit `0`.
+   `media-cleanup` healthy after a successful batch; `storage-init` must exit `0`.
 4. Frontend `/`, backend live/readiness, GraphQL `{ __typename }` and a bounded `/locations/?in_bbox=...` request return HTTP 200.
 5. Django reports the `smokemap` schema and a PostGIS version.
 6. `make check` and `make test` pass.
@@ -319,6 +320,6 @@ Do not install host dependencies, run production migrations, contact external st
 - Backend waits indefinitely: inspect `docker compose logs backend db` and call `/health/ready/` from the backend container.
 - Frontend waits indefinitely: inspect `docker compose logs frontend`; the first request may trigger a development compilation.
 - MinIO initialization fails: inspect `docker compose logs storage storage-init`; success means the legacy bucket is anonymously downloadable and the distinct M3 source-media bucket is anonymous-private.
-- Media cleanup restarts or reports failed iterations: inspect `docker compose logs media-cleanup`; invalid batch/interval values fail before the loop, while individual command failures are logged and retried.
+- Media cleanup is unhealthy or restarts: inspect `docker compose logs media-cleanup` for redacted reason codes and follow `docs/DEV_MEDIA_CLEANUP.md`. Invalid configuration or Django startup checks exit; batch failures retry after the interval. Health requires real successful progress; Docker does not restart a running process just because it is unhealthy.
 - Test database schema errors: use `make test`; do not run the raw backend test command without its `POSTGRES_OPTIONS` override.
 - Port conflict: override only the host-side port in `.env` using `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MINIO_API_PORT` or `MINIO_CONSOLE_PORT`.
