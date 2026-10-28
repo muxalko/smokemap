@@ -140,8 +140,10 @@ to diagnose failures; do not enable raw child-output logging. After fixing
 an invalid knob or statestore problem, recreate the development worker with
 its corrected configuration. Normal batch failures retry automatically and
 report `recovered` only after genuine batch success. Docker unhealthy status
-exposes the failure but **does not restart a still-running process**. External
-alert routing is separate and has not been configured by this change.
+exposes the failure but **does not restart a still-running process**. Root
+#132 adds opt-in, host-side [cleanup health email alerts](DEV_CLEANUP_ALERTS.md)
+that read this Docker health status; nothing installs or enables them by
+default, and they change neither this worker nor its healthcheck.
 
 ## Verification
 

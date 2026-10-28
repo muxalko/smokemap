@@ -162,6 +162,9 @@ staging contract and the loopback-only local-staging overlay
 uses its own `smokemap-local-staging` project, a home outside every Git
 working tree, and `make local-staging-*` commands. Never point it at
 development containers, ports, or volumes.
+`make test-dev-cleanup-alert` runs the offline tests for the opt-in host-side
+cleanup health email monitor (`docs/DEV_CLEANUP_ALERTS.md`) without Docker,
+network access or mail delivery; it is also part of `make test`.
 
 The stack must be running before these commands:
 
@@ -321,5 +324,9 @@ Do not install host dependencies, run production migrations, contact external st
 - Frontend waits indefinitely: inspect `docker compose logs frontend`; the first request may trigger a development compilation.
 - MinIO initialization fails: inspect `docker compose logs storage storage-init`; success means the legacy bucket is anonymously downloadable and the distinct M3 source-media bucket is anonymous-private.
 - Media cleanup is unhealthy or restarts: inspect `docker compose logs media-cleanup` for redacted reason codes and follow `docs/DEV_MEDIA_CLEANUP.md`. Invalid configuration or Django startup checks exit; batch failures retry after the interval. Health requires real successful progress; Docker does not restart a running process just because it is unhealthy.
+- Cleanup alert mail is missing or its user unit failed: inspect
+  `journalctl --user -u smokemap-dev-cleanup-alert.service` for fixed reason
+  codes and follow `docs/DEV_CLEANUP_ALERTS.md`. Never print its environment
+  or SMTP password file.
 - Test database schema errors: use `make test`; do not run the raw backend test command without its `POSTGRES_OPTIONS` override.
 - Port conflict: override only the host-side port in `.env` using `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MINIO_API_PORT` or `MINIO_CONSOLE_PORT`.
