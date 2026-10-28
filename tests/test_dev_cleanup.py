@@ -257,6 +257,8 @@ class RunnerTests(unittest.TestCase):
 
     def test_store_failure_exits_generically_before_work(self):
         self.state_dir.mkdir(mode=0o755)
+        # The deliberately unsafe fixture must survive a restrictive caller umask.
+        self.state_dir.chmod(0o755)
         self.start()
         self.proc.wait(timeout=5)
         self.assertEqual(self.proc.returncode, 74)

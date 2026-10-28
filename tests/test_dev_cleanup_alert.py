@@ -522,7 +522,7 @@ class SmtpTests(Harness):
         self.assertEqual(alert.send(config, PASSWORD, self.message(config)), 'sent')
         FakeSMTP.quit_fails = False
         FakeSMTP.refused = {'ops@example.test': (550, b'x')}
-        self.assertEqual(alert.send(config, PASSWORD, self.message(config)), 'partial')
+        self.assertEqual(alert.send(config, PASSWORD, self.message(config)), 'smtp_partial')
 
 
 class CheckTests(Harness):
@@ -577,14 +577,30 @@ class CheckTests(Harness):
                          (0, 'sent', 'recovery'))
         self.assertEqual(self.state(), alert.fresh(NOW + 900))
 
-    def test_partial_delivery_is_not_repeated_but_fails_the_run(self):
+    def test_partial_delivery_retries_alert_and_recovery_until_all_accepted(self):
         config = self.config(FAILURE_THRESHOLD='1')
         self.mode('missing')
-        FakeSMTP.refused = {'ops@example.test': (550, b'x')}
-        self.assertEqual(self.check(config, NOW)[0], 75)
+        FakeSMTP.refused = {'ops@example.test': (550, SECRET.encode())}
+        code, events = self.check(config, NOW)
+        self.assertEqual(code, 75)
+        self.assertEqual(events[-1]['reason'], 'smtp_partial')
+        self.assertIsNone(self.state()['alerted_at'])
         FakeSMTP.refused = {}
         self.assertEqual(self.check(config, NOW + 300)[0], 0)
-        self.assertEqual(len(self.sent()), 1)
+        self.assertEqual(len(self.sent()), 2)
+        self.assertEqual(self.state()['alerted_at'], NOW + 300)
+        self.assertEqual(self.check(config, NOW + 400)[0], 0)
+        self.assertEqual(len(self.sent()), 2, 'fully accepted alerts are suppressed')
+        self.mode('running/healthy/0')
+        FakeSMTP.refused = {'ops@example.test': (550, SECRET.encode())}
+        self.assertEqual(self.check(config, NOW + 600)[0], 75)
+        self.assertTrue(self.state()['recovery_pending'])
+        FakeSMTP.refused = {}
+        self.assertEqual(self.check(config, NOW + 900)[0], 0)
+        self.assertEqual(self.state(), alert.fresh(NOW + 900))
+        self.assertEqual(len(self.sent()), 4)
+        self.assertEqual(self.check(config, NOW + 1200)[0], 0)
+        self.assertEqual(len(self.sent()), 4, 'accepted recovery is suppressed')
 
     def test_password_is_used_but_never_emitted(self):
         config = self.config(FAILURE_THRESHOLD='1', SMTP_USERNAME='user',

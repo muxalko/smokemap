@@ -466,7 +466,7 @@ def compose_message(config, kind, state, restarts, now):
 
 
 def send(config, password, message):
-    """Deliver once; return 'sent', 'partial' or a fixed failure reason."""
+    """Deliver once; return 'sent' only when every recipient is accepted."""
     context = ssl.create_default_context()
     try:
         if config.security == 'tls':
@@ -494,7 +494,7 @@ def send(config, password, message):
             client.quit()
         with contextlib.suppress(OSError):
             client.close()
-    return 'partial' if refused else 'sent'
+    return 'smtp_partial' if refused else 'sent'
 
 
 def load_state(store, now):
@@ -521,10 +521,10 @@ def check(config, password, now=None):
             if kind:
                 result = send(config, password, compose_message(config, kind, state,
                                                                 restarts, now))
-                if result in ('sent', 'partial'):
+                if result == 'sent':
                     state = fresh(now) if kind == 'recovery' else {**state, 'alerted_at': now}
                     event('notify', result, kind)
-                    code = 75 if result == 'partial' else 0
+                    code = 0
                 else:
                     event('notify', 'failure', result, kind=kind)
                     code = 75
@@ -580,9 +580,9 @@ def main(argv=None, env=None):
     if argv[0] == 'send-test':
         now = time.time()
         result = send(config, password, compose_message(config, 'test', fresh(now), None, now))
-        if result in ('sent', 'partial'):
+        if result == 'sent':
             event('notify', result, 'test')
-            return 0 if result == 'sent' else 75
+            return 0
         event('notify', 'failure', result, kind='test')
         return 75
     return check(config, password)

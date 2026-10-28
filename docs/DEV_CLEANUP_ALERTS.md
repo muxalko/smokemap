@@ -63,8 +63,11 @@ before a recovery mail was delivered continues the announced incident.
 
 Delivery is at-least-once toward the operator. A failed delivery is not
 recorded as sent, so the next run retries it and the unit run fails (exit
-`75`). If some but not all recipients are refused, the mail counts as sent
-(to avoid duplicates) but the run still exits `75`. Reminder timing uses the
+`75`). Partial recipient refusal also remains pending and retries the whole
+message on the next run. Recipients that already accepted it can see a duplicate
+until every destination accepts; an alert or recovery is suppressed only after
+full acceptance. SMTP acceptance confirms relay handoff, not inbox delivery.
+Reminder timing uses the
 wall clock; if the clock moves backwards, a reminder is sent early rather
 than late.
 
@@ -213,8 +216,8 @@ journal:
 | `config` | `valid` | `ok` (from `validate`) |
 | `check` | `healthy` / `problem` | observed reason, with `streak` |
 | `check` | `skipped` | `busy` (another run holds the lock) |
-| `notify` | `sent` / `partial` | `alert`, `reminder`, `recovery`, `test` |
-| `notify` | `failure` | `smtp_connect`, `smtp_tls`, `smtp_auth`, `smtp_send` (with `kind`) |
+| `notify` | `sent` | `alert`, `reminder`, `recovery`, `test` |
+| `notify` | `failure` | `smtp_connect`, `smtp_tls`, `smtp_auth`, `smtp_send`, `smtp_partial` (with `kind`) |
 | `preview` | `alert` / `reminder` / `recovery` / `none` | observed reason |
 | `state` | `reset` | `state_invalid` |
 | `state` | `failure` | `state_error` |
