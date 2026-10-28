@@ -527,7 +527,7 @@ class SmtpTests(Harness):
 
 class CheckTests(Harness):
     def state(self):
-        return json.loads((self.state_dir / 'state.json').read_text())
+        return json.loads((self.state_dir / 'state.json').read_text())['incident']
 
     def test_incident_lifecycle_and_private_state(self):
         config = self.config(REPEAT_SECONDS='3600')
@@ -602,6 +602,44 @@ class CheckTests(Harness):
         self.assertEqual(self.check(config, NOW + 1200)[0], 0)
         self.assertEqual(len(self.sent()), 4, 'accepted recovery is suppressed')
 
+    def test_project_switch_cannot_suppress_alert_or_invent_recovery(self):
+        old = self.config(COMPOSE_PROJECT='old-dev', FAILURE_THRESHOLD='1', REPEAT_SECONDS='0')
+        new = self.config(COMPOSE_PROJECT='new-dev', FAILURE_THRESHOLD='1', REPEAT_SECONDS='0')
+        self.mode('missing')
+        self.assertEqual(self.check(old, NOW)[0], 0)
+        self.assertEqual(len(self.sent()), 1)
+        code, events = self.check(new, NOW + 11 * 86400)
+        self.assertEqual(code, 0)
+        self.assertEqual(events[0]['reason'], 'scope_changed')
+        self.assertEqual(len(self.sent()), 2)
+        self.assertIn('Compose project: new-dev', self.sent()[-1].get_content())
+        self.assertIn('ALERT:', self.sent()[-1]['Subject'])
+        self.mode('running/healthy/0')
+        another = self.config(COMPOSE_PROJECT='healthy-dev', FAILURE_THRESHOLD='1',
+                              REPEAT_SECONDS='0')
+        self.assertEqual(self.check(another, NOW + 12 * 86400)[0], 0)
+        self.assertEqual(len(self.sent()), 2, 'new target cannot recover old incident')
+        self.assertEqual(self.state(), alert.fresh(NOW + 12 * 86400))
+
+    def test_destination_switch_gets_alert_but_credential_rotation_keeps_state(self):
+        old = self.config(FAILURE_THRESHOLD='1', REPEAT_SECONDS='0')
+        new = self.config(FAILURE_THRESHOLD='1', REPEAT_SECONDS='0', TO='new@example.test')
+        self.mode('missing')
+        self.assertEqual(self.check(old, NOW)[0], 0)
+        self.assertEqual(self.check(new, NOW + 300)[0], 0)
+        self.assertEqual(len(self.sent()), 2)
+        self.assertEqual(self.sent()[-1]['To'], 'new@example.test')
+        rotated = self.config(FAILURE_THRESHOLD='1', REPEAT_SECONDS='0', TO='new@example.test',
+                              SMTP_USERNAME='rotated', SMTP_PASSWORD_FILE=str(self.secret_file()))
+        self.assertEqual(alert.state_scope(new), alert.state_scope(rotated))
+        self.assertEqual(self.check(rotated, NOW + 600, password=PASSWORD)[0], 0)
+        self.assertEqual(len(self.sent()), 2)
+        envelope = json.loads((self.state_dir / 'state.json').read_text())
+        self.assertEqual(set(envelope), {'version', 'scope', 'incident'})
+        self.assertEqual(envelope['version'], 2)
+        self.assertEqual(envelope['scope'], alert.state_scope(new))
+        self.assertNotIn(PASSWORD, json.dumps(envelope))
+
     def test_password_is_used_but_never_emitted(self):
         config = self.config(FAILURE_THRESHOLD='1', SMTP_USERNAME='user',
                              SMTP_PASSWORD_FILE=str(self.secret_file()))
@@ -639,6 +677,27 @@ class CheckTests(Harness):
                 self.assertEqual(events[0], {**events[0], 'event': 'state', 'outcome': 'reset',
                                              'reason': 'state_invalid'})
                 self.assertEqual(self.state(), alert.fresh(NOW))
+
+    def test_binding_envelope_and_inner_incident_are_validated(self):
+        config = self.config()
+        base = {'version': 2, 'scope': alert.state_scope(config), 'incident': alert.fresh(NOW)}
+        invalid = [{**base, 'version': True}, {**base, 'version': 1},
+                   {**base, 'scope': None}, {**base, 'scope': 'x' * 64},
+                   {**base, 'extra': 0},
+                   {**base, 'incident': {**alert.fresh(NOW), 'checked_at': None}},
+                   {**base, 'incident': {**alert.fresh(NOW), 'streak': True}},
+                   {**base, 'incident': {**alert.fresh(NOW), 'version': 2}}]
+        for value in invalid:
+            with self.subTest(value=value):
+                self.state_dir.mkdir(mode=0o700, exist_ok=True)
+                path = self.state_dir / 'state.json'
+                path.write_text(json.dumps(value))
+                path.chmod(0o600)
+                code, events = self.check(config, NOW)
+                self.assertEqual(code, 0)
+                self.assertEqual(events[0]['reason'], 'state_invalid')
+                self.assertEqual(self.state(), alert.fresh(NOW))
+                self.assertEqual(self.sent(), [])
 
     def test_unsafe_state_fails_closed_before_docker(self):
         def symlink_state():

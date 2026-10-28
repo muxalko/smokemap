@@ -85,6 +85,13 @@ service, reason codes with fixed descriptions, UTC timestamps, numbers and the
 read-only operator commands from the supervision document. It never contains
 Docker output, logs, environment values, SMTP errors or credentials.
 
+Persistent state uses a strict version-2 envelope bound to the monitored project
+and mail route (relay, port, TLS mode, sender and recipient set). A route change
+starts fresh incident tracking; it cannot suppress a new target's alert or
+report an old target's recovery under the new name. The binding contains no
+credentials; password rotation keeps the existing incident. Writes sync both
+the private temporary file and containing directory after atomic replacement.
+
 ## Configuration
 
 Settings come from environment variables, normally a private systemd
@@ -219,7 +226,7 @@ journal:
 | `notify` | `sent` | `alert`, `reminder`, `recovery`, `test` |
 | `notify` | `failure` | `smtp_connect`, `smtp_tls`, `smtp_auth`, `smtp_send`, `smtp_partial` (with `kind`) |
 | `preview` | `alert` / `reminder` / `recovery` / `none` | observed reason |
-| `state` | `reset` | `state_invalid` |
+| `state` | `reset` | `state_invalid`, `scope_changed` |
 | `state` | `failure` | `state_error` |
 | `monitor` | `failure` | `internal_error` |
 

@@ -15,6 +15,7 @@ import datetime
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 import fcntl
+import hashlib
 import json
 import math
 import os
@@ -88,6 +89,10 @@ class Malformed(Exception):
 
 
 class Busy(Exception):
+    pass
+
+
+class ScopeChanged(Exception):
     pass
 
 
@@ -252,9 +257,18 @@ def valid_state(value):
     return True
 
 
+def state_scope(config):
+    # Bind delivery suppression to its target and destinations. Credentials are
+    # intentionally excluded so rotation cannot reset a correctly tracked incident.
+    value = [config.project, config.host, config.port, config.security,
+             config.sender, sorted(config.recipients)]
+    return hashlib.sha256(json.dumps(value, separators=(',', ':')).encode()).hexdigest()
+
+
 class Store:
-    def __init__(self, directory):
+    def __init__(self, directory, scope):
         self.directory = Path(directory)
+        self.scope = scope
 
     def directory_fd(self):
         fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
@@ -308,9 +322,15 @@ class Store:
             value = loads(raw)
         except ValueError:
             raise Malformed from None
-        if not valid_state(value):
+        if (not isinstance(value, dict) or set(value) != {'version', 'scope', 'incident'}
+                or type(value['version']) is not int or value['version'] != 2
+                or not isinstance(value['scope'], str)
+                or not re.fullmatch(r'[0-9a-f]{64}', value['scope'])
+                or not valid_state(value['incident'])):
             raise Malformed
-        return value
+        if value['scope'] != self.scope:
+            raise ScopeChanged
+        return value['incident']
 
     def write(self, value):
         fd = self.directory_fd()
@@ -321,10 +341,12 @@ class Store:
                           0o600, dir_fd=fd)
             created = True
             with os.fdopen(out, 'w') as stream:
-                json.dump(value, stream, separators=(',', ':'), allow_nan=False)
+                json.dump({'version': 2, 'scope': self.scope, 'incident': value}, stream,
+                          separators=(',', ':'), allow_nan=False)
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(stage, 'state.json', src_dir_fd=fd, dst_dir_fd=fd)
+            os.fsync(fd)
         finally:
             try:
                 if created:
@@ -500,6 +522,9 @@ def send(config, password, message):
 def load_state(store, now):
     try:
         state = store.load()
+    except ScopeChanged:
+        event('state', 'reset', 'scope_changed')
+        return fresh(now)
     except Malformed:
         event('state', 'reset', 'state_invalid')
         return fresh(now)
@@ -507,7 +532,7 @@ def load_state(store, now):
 
 
 def check(config, password, now=None):
-    store = Store(config.state_directory)
+    store = Store(config.state_directory, state_scope(config))
     try:
         store.prepare()
         with store.locked():
@@ -542,7 +567,7 @@ def preview(config, now=None):
     """Show the next decision and message; never locks, writes or sends."""
     now = time.time() if now is None else now
     try:
-        state = load_state(Store(config.state_directory), now)
+        state = load_state(Store(config.state_directory, state_scope(config)), now)
     except FileNotFoundError:
         state = fresh(now)
     except (OSError, StateError):
