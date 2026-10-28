@@ -95,7 +95,7 @@ check-backend:
 check-frontend:
 	docker compose exec -T frontend yarn run check
 
-test: test-dev-cleanup test-backend test-frontend
+test: test-dev-cleanup test-dev-cleanup-alert test-backend test-frontend
 
 test-backend:
 	docker compose exec -T -e POSTGRES_OPTIONS="-c search_path=public" backend python manage.py test --keepdb
@@ -214,3 +214,8 @@ test-dev-cleanup:
 
 test-dev-cleanup-compose:
 	python3 -m unittest discover -s tests -p 'test_dev_cleanup_compose.py' -v
+
+# Python stdlib only; fake Docker CLI and SMTP, never network, mail or Docker.
+.PHONY: test-dev-cleanup-alert
+test-dev-cleanup-alert:
+	python3 -m unittest discover -s tests -p 'test_dev_cleanup_alert.py' -v

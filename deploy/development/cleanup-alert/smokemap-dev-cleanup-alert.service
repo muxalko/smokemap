@@ -1,0 +1,22 @@
+# Opt-in DEVELOPMENT host template; nothing in this repository installs or
+# enables it. Follow docs/DEV_CLEANUP_ALERTS.md before installing it as a
+# systemd user unit for the account that operates the DEVELOPMENT stack.
+[Unit]
+Description=Smokemap DEVELOPMENT media-cleanup health email monitor
+Documentation=https://github.com/muxalko/smokemap/blob/development/docs/DEV_CLEANUP_ALERTS.md
+
+[Service]
+Type=oneshot
+# Private, operator-owned settings (mode 0600). Every REPLACE_ME must be replaced.
+EnvironmentFile=%h/.config/smokemap/dev-cleanup-alert.env
+# A reviewed copy installed outside every mutable checkout; -I isolates imports.
+ExecStart=/usr/bin/python3 -I %h/.local/libexec/smokemap/dev-cleanup-alert.py check
+StateDirectory=smokemap-dev-cleanup-alert
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+# Optional alternative to CLEANUP_ALERT_SMTP_PASSWORD_FILE when the user
+# manager supports credentials; leave the env-file setting empty if enabled.
+#LoadCredential=smtp-password:%h/.config/smokemap/dev-cleanup-alert.smtp-password
+# Two bounded Docker queries plus one bounded SMTP delivery.
+TimeoutStartSec=180

@@ -1,0 +1,13 @@
+# Opt-in DEVELOPMENT host template; see docs/DEV_CLEANUP_ALERTS.md.
+[Unit]
+Description=Check Smokemap DEVELOPMENT media-cleanup health every five minutes
+Documentation=https://github.com/muxalko/smokemap/blob/development/docs/DEV_CLEANUP_ALERTS.md
+
+[Timer]
+OnActiveSec=1min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=smokemap-dev-cleanup-alert.service
+
+[Install]
+WantedBy=timers.target
