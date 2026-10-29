@@ -42,7 +42,10 @@ count-protocol and timeout failures. Batches default to 100, retries to 300
 seconds, and each check/batch has a configurable 120-second deadline. Failed
 batches retry; Docker unhealthy alone does not restart a running worker.
 Structured events contain only fixed reason codes, timestamps and numeric
-counts; child diagnostics are discarded. No external alerts are configured.
+counts; child diagnostics are discarded. Opt-in host-side
+[email alerts](docs/DEV_CLEANUP_ALERTS.md) can report its Docker health
+transitions on DEVELOPMENT; none are installed or enabled by default and
+`make test-dev-cleanup-alert` runs their offline tests.
 See [development cleanup supervision](docs/DEV_MEDIA_CLEANUP.md) for knobs,
 health timing, private ephemeral state, redaction and recovery commands.
 No cleanup port is published, and the API/frontend do not depend on this

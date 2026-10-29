@@ -29,6 +29,10 @@ execution, redacted events and batch-progress health without changing the
 backend cleanup/expiry policy, application revisions or staging/local/Quick
 contracts. Source tests and CI wiring do not constitute frozen DEVELOPMENT
 release deployment, independent review or external alert-routing evidence.
+Root #132 adds opt-in, host-side [cleanup health email alerts](DEV_CLEANUP_ALERTS.md)
+as source, offline tests and systemd user templates. Its SMTP relay, sender
+and recipients remain undecided placeholders; installation on the
+DEVELOPMENT host and real delivery are separate operator evidence.
 
 Evidence base:
 
