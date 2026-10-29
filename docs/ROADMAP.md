@@ -388,6 +388,8 @@ client depends on them.
 
 ## 8. Current milestone — M5 production readiness
 
+Planned delivery architecture: [M5 hybrid CI/CD architecture](M5_CICD_ARCHITECTURE.md) (future implementation; not deployed).
+
 ### Entry criteria
 
 - M1 through M4 have demonstrated their exit criteria.
