@@ -82,6 +82,34 @@ def backup_semantics():
     return {'rule_files': [], 'evaluation_interval': '25h', 'tests': tests}
 
 
+def observation_semantics():
+    """Evaluate every actual source-age target against valid and invalid reads."""
+    labels = 'job="smokemap-monitoring",host="jenkins",instance="fixture"'
+    tests = []
+    cases = [('valid', 1, 89940, 60), ('zero_age', 1, 90000, 0),
+             ('zero_timestamp', 1, 0, None), ('negative_timestamp', 1, -1, None),
+             ('future_timestamp', 1, 90001, None), ('failed_read', 0, 89940, None),
+             ('missing_success', None, 89940, None), ('missing_timestamp', 1, None, None)]
+    for dashboard, panel, target in targets():
+        if panel['title'] not in ('Source observation age', 'Signal freshness'):
+            continue
+        source = re.search(r'source="([^"}]+)"', target['expr']).group(1)
+        source_labels = labels + f',source="{source}"'
+        for name, success, timestamp, expected in cases:
+            metrics = [(f'up{{{labels}}}', 1),
+                       (f'smokemap_collector_timestamp_seconds{{{labels}}}', 90000),
+                       (f'node_textfile_scrape_error{{{labels}}}', 0),
+                       (f'smokemap_source_success{{{source_labels}}}', success),
+                       (f'smokemap_source_timestamp_seconds{{{source_labels}}}', timestamp)]
+            tests.append({'name': f'{dashboard}_{source}_{name}', 'interval': '25h',
+                          'input_series': [{'series': metric, 'values': f'{value} {value}'}
+                                           for metric, value in metrics if value is not None],
+                          'promql_expr_test': [{'expr': target['expr'], 'eval_time': '25h',
+                                               'exp_samples': [] if expected is None else [
+                                                   {'labels': '{' + source_labels + '}', 'value': expected}]}]})
+    return tests
+
+
 class DashboardContracts(unittest.TestCase):
     def test_identity_navigation_and_native_panels(self):
         self.assertEqual(len(set(d['uid'] for d in DASHBOARDS.values())), 3)
@@ -155,7 +183,7 @@ class DashboardContracts(unittest.TestCase):
                 self.assertIn('== 1', q)
             if p['type'] in ('timeseries', 'state-timeline'):
                 self.assertIs(p['fieldConfig']['defaults']['custom']['spanNulls'], False)
-                self.assertEqual(p['fieldConfig']['defaults']['custom']['insertNulls'], 90000)
+                self.assertIs(p['fieldConfig']['defaults']['custom']['insertNulls'], False)
             if p['type'] == 'stat':
                 self.assertTrue(t['instant'])
                 self.assertFalse(t['range'])
@@ -229,6 +257,68 @@ class DashboardContracts(unittest.TestCase):
         stale = next(t for t in tests if t['name'] == 'operator_regression_25h')
         self.assertTrue(all(t['exp_samples'][0]['value'] == 0 for t in stale['promql_expr_test']))
 
+    def test_inspection_failures_describe_reads_not_health(self):
+        panel = next(p for p in DASHBOARDS['smokemap']['panels'] if p['id'] == 10)
+        self.assertEqual(panel['title'], 'Docker inspection failures')
+        for phrase in ('1 = Docker state could not be read', '0 = successful inspection',
+                       'Five-service state', 'Gaps are unknown'):
+            self.assertIn(phrase, panel['description'])
+        self.assertEqual(len(panel['targets']), 5)
+        for target in panel['targets']:
+            self.assertIn('(1 - smokemap_source_success{', target['expr'])
+
+    def test_hcp_alert_filter_excludes_shared_and_other_sources(self):
+        panel = next(p for p in DASHBOARDS['hcp']['panels'] if p['type'] == 'table')
+        query = panel['targets'][0]['expr']
+        matcher = re.search(r'source=~"([^"}]+)"', query).group(1)
+        self.assertEqual(matcher, 'hcp_.*')
+        for source in ('hcp_api', 'hcp_runtime', 'hcp_queue'):
+            self.assertIsNotNone(re.fullmatch(matcher, source))
+        for source in ('', 'backup', 'dev_frontend', 'frontend', 'linux'):
+            self.assertIsNone(re.fullmatch(matcher, source))
+
+    def test_observation_age_filters_invalid_and_failed_reads(self):
+        observations = [(p, t) for _, p, t in targets()
+                        if p['title'] in ('Source observation age', 'Signal freshness')]
+        self.assertEqual(len(observations), 8)
+        for panel, target in observations:
+            q = target['expr']
+            timestamp = re.search(r'smokemap_source_timestamp_seconds\{[^}]+\}', q).group()
+            success = timestamp.replace('smokemap_source_timestamp_seconds', 'smokemap_source_success')
+            self.assertTrue(q.startswith(f'((time() - ({timestamp} > 0)) >= 0)'))
+            self.assertIn(f'and on(job,instance,source) ({success} == 1)', q)
+            self.assertNotIn('bool', q)
+            self.assertNotIn(' or ', q)
+            self.assertIn('gaps', panel['description'])
+        fixtures = observation_semantics()
+        self.assertEqual(len(fixtures), 64)
+        for fixture in fixtures:
+            sample = fixture['promql_expr_test'][0]['exp_samples']
+            if fixture['name'].endswith(('_valid', '_zero_age')):
+                self.assertEqual(len(sample), 1)
+                self.assertIn(sample[0]['value'], (0, 60))
+            else:
+                self.assertEqual(sample, [])
+
+    def test_alert_tables_have_truthful_empty_cells_and_friendly_sources(self):
+        aliases = {'frontend': 'Web', 'backend': 'API', 'dev_frontend': 'Web',
+                   'dev_backend': 'API', 'dev_db': 'Database', 'dev_storage': 'Storage',
+                   'dev_media_cleanup': 'Cleanup', 'hcp_api': 'HCP API',
+                   'hcp_runtime': 'HCP runtime', 'hcp_queue': 'HCP queue', 'backup': 'Backup'}
+        for dashboard in DASHBOARDS.values():
+            panel = next(p for p in dashboard['panels'] if p['type'] == 'table')
+            defaults = panel['fieldConfig']['defaults']
+            self.assertEqual(defaults['noValue'], '—')
+            self.assertEqual(defaults['mappings'][0]['options']['result']['text'], '—')
+            self.assertIn('No rows means no matching firing alerts', panel['description'])
+            self.assertIn('Check monitoring health', panel['description'])
+            override = next(o for o in panel['fieldConfig']['overrides']
+                            if o['matcher'] == {'id': 'byName', 'options': 'Source'})
+            mapping = next(p['value'][0]['options'] for p in override['properties'] if p['id'] == 'mappings')
+            self.assertEqual(mapping, {key: {'text': value} for key, value in aliases.items()})
+            self.assertEqual(panel['transformations'][0]['options']['renameByName']['source'], 'Source')
+            self.assertNotIn(' or ', panel['targets'][0]['expr'])
+
     def test_normalized_validation_export_covers_every_target(self):
         rules = normalized_rules()['groups'][0]['rules']
         self.assertEqual(len(rules), len(list(targets())))
@@ -240,6 +330,8 @@ if __name__ == '__main__':
     if sys.argv[1:] == ['--promql']:
         print(json.dumps(normalized_rules(), indent=2))
     elif sys.argv[1:] == ['--promql-tests']:
-        print(json.dumps(backup_semantics(), indent=2))
+        suite = backup_semantics()
+        suite['tests'].extend(observation_semantics())
+        print(json.dumps(suite, indent=2))
     else:
         unittest.main()

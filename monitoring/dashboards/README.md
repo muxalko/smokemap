@@ -27,8 +27,12 @@ collector age between 0 and 180 seconds, and a readable textfile. Joins use
 a successful source read. Docker state requires a configured healthcheck and
 combines running with health. Unsupported/missing health is **UNKNOWN**; failed
 health is red. Stat queries are instant and use the last value, avoiding a
-previous non-null healthy sample. Timelines expose 0/1 and preserve null gaps;
-90s gap insertion allows for 30s scrape cadence without bridging long outages.
+previous non-null healthy sample. Timelines expose 0/1 and preserve null gaps.
+No fixed disconnect threshold is used, so valid 2m/5m query steps at longer
+ranges stay connected while actual nulls remain unbridged. Source-age trends
+require successful reads and positive, non-future timestamps; invalid observations
+are gaps instead of epoch-sized spikes. Docker inspection failures reports only
+unreadable Docker state, not unhealthy containers; Five-service state shows health.
 
 Aggregate availability requires both named probes; the service count requires
 all five service observations. Missing data cannot reduce the denominator.
@@ -57,9 +61,12 @@ throughput, HTTP rate, p95 latency or submission-throughput metrics are implied.
 
 Alert tables show only `monitoring_scope="smokemap_hcp"`, firing state, alert
 name, source and severity; other host/job alerts remain in existing dashboards.
-The Smokemap and HCP tables include alerts without a source for shared monitoring
-failures. A legitimate zero alert count is anchored to a live Prometheus self
-scrape; operational metrics never get zero fallbacks. Empty alert tables do not
+The HCP table includes only sources matching `hcp_.*`. Shared alerts without a
+source, backup alerts and host alerts are available in Overview; Smokemap also
+includes shared monitoring failures. Source cells map known aliases to friendly
+names without changing query labels. Missing cells use an em dash; no rows means
+no matching firing alerts. A legitimate zero alert count is anchored to a live
+Prometheus self scrape; operational metrics never get zero fallbacks. Empty alert tables do not
 prove health or notification delivery. Descriptions document coverage, not private
 diagnostics, paths, task content or secrets.
 
@@ -86,8 +93,9 @@ coverage, gates, missing-state handling, units, counters and informational waits
 CI uses the Prometheus parser on all exported queries and evaluates synthetic
 backup-readiness cases against both actual dashboard expressions (fresh, 24h
 boundary, old, future, absent evidence, failed source, exporter down, stale/future
-collector and textfile errors). Fixtures contain no live metrics. Static tests do not prove
-live label cardinality, data freshness, rendering or operational behavior.
+collector and textfile errors), plus every source-age target with valid, zero,
+negative, future, missing and failed-read observations. Fixtures contain no live
+metrics. Static tests do not prove live label cardinality, data freshness, rendering or operational behavior.
 
 ## Primary operator handoff (not executed)
 

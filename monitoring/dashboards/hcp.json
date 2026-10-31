@@ -639,7 +639,7 @@
           ],
           "custom": {
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "lineWidth": 0,
             "fillOpacity": 85
           }
@@ -721,7 +721,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
@@ -807,7 +807,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -893,7 +893,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -979,7 +979,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -1134,7 +1134,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
@@ -1242,7 +1242,7 @@
         "w": 16,
         "h": 6
       },
-      "description": "Over 180s needs attention. Failed reads have timestamp zero.",
+      "description": "Age of successful observations with valid timestamps; over 180s needs attention. Failed reads and invalid timestamps are gaps; failures remain visible in API / runtime status and HCP alert context.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -1251,7 +1251,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
           "legendFormat": "HCP API",
           "editorMode": "code",
           "range": true,
@@ -1259,7 +1259,7 @@
         },
         {
           "refId": "B",
-          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
           "legendFormat": "HCP runtime",
           "editorMode": "code",
           "range": true,
@@ -1267,7 +1267,7 @@
         },
         {
           "refId": "C",
-          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
           "legendFormat": "Queue",
           "editorMode": "code",
           "range": true,
@@ -1313,7 +1313,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -1344,7 +1344,7 @@
         "w": 16,
         "h": 6
       },
-      "description": "Scoped firing alerts only. Empty means no rows; check the Prometheus signal before concluding all clear.",
+      "description": "No rows means no matching firing alerts. Check monitoring health and the Prometheus signal before concluding all clear.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -1353,7 +1353,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "ALERTS{monitoring_scope=\"smokemap_hcp\",alertstate=\"firing\",source=~\"hcp_.*|\"}",
+          "expr": "ALERTS{monitoring_scope=\"smokemap_hcp\",alertstate=\"firing\",source=~\"hcp_.*\"}",
           "legendFormat": "",
           "editorMode": "code",
           "range": false,
@@ -1364,7 +1364,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "noValue": "UNKNOWN",
+          "noValue": "\u2014",
           "color": {
             "mode": "palette-classic"
           },
@@ -1383,14 +1383,66 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "UNKNOWN",
+                  "text": "\u2014",
                   "color": "gray"
                 }
               }
             }
           ]
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "frontend": {
+                        "text": "Web"
+                      },
+                      "backend": {
+                        "text": "API"
+                      },
+                      "dev_frontend": {
+                        "text": "Web"
+                      },
+                      "dev_backend": {
+                        "text": "API"
+                      },
+                      "dev_db": {
+                        "text": "Database"
+                      },
+                      "dev_storage": {
+                        "text": "Storage"
+                      },
+                      "dev_media_cleanup": {
+                        "text": "Cleanup"
+                      },
+                      "hcp_api": {
+                        "text": "HCP API"
+                      },
+                      "hcp_runtime": {
+                        "text": "HCP runtime"
+                      },
+                      "hcp_queue": {
+                        "text": "HCP queue"
+                      },
+                      "backup": {
+                        "text": "Backup"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,

@@ -640,7 +640,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
@@ -724,7 +724,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
@@ -852,7 +852,7 @@
           ],
           "custom": {
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "lineWidth": 0,
             "fillOpacity": 85
           }
@@ -938,7 +938,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -1026,7 +1026,7 @@
             "fillOpacity": 12,
             "showPoints": "never",
             "spanNulls": false,
-            "insertNulls": 90000,
+            "insertNulls": false,
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
@@ -1059,7 +1059,7 @@
         "w": 16,
         "h": 6
       },
-      "description": "Scoped firing alerts only. Empty means no rows; check the Prometheus signal before concluding all clear.",
+      "description": "No rows means no matching firing alerts. Check monitoring health and the Prometheus signal before concluding all clear.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -1079,7 +1079,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "noValue": "UNKNOWN",
+          "noValue": "\u2014",
           "color": {
             "mode": "palette-classic"
           },
@@ -1098,14 +1098,66 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "UNKNOWN",
+                  "text": "\u2014",
                   "color": "gray"
                 }
               }
             }
           ]
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "frontend": {
+                        "text": "Web"
+                      },
+                      "backend": {
+                        "text": "API"
+                      },
+                      "dev_frontend": {
+                        "text": "Web"
+                      },
+                      "dev_backend": {
+                        "text": "API"
+                      },
+                      "dev_db": {
+                        "text": "Database"
+                      },
+                      "dev_storage": {
+                        "text": "Storage"
+                      },
+                      "dev_media_cleanup": {
+                        "text": "Cleanup"
+                      },
+                      "hcp_api": {
+                        "text": "HCP API"
+                      },
+                      "hcp_runtime": {
+                        "text": "HCP runtime"
+                      },
+                      "hcp_queue": {
+                        "text": "HCP queue"
+                      },
+                      "backup": {
+                        "text": "Backup"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
