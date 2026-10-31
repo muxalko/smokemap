@@ -1,0 +1,329 @@
+{
+  "groups": [
+    {
+      "name": "smokemap-monitoring",
+      "interval": "30s",
+      "rules": [
+        {
+          "alert": "MonitoringCollectorAbsent",
+          "expr": "absent(smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: monitoring collector metrics absent; check user timer/exporter"
+          }
+        },
+        {
+          "alert": "MonitoringCollectorStale",
+          "expr": "time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\"} > 180",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: monitoring collector is stale (>180s); check user timer"
+          }
+        },
+        {
+          "alert": "MonitoringExporterDown",
+          "expr": "up{job=\"smokemap-monitoring\"} == 0 or absent(up{job=\"smokemap-monitoring\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: private monitoring exporter unreachable; check port 9708"
+          }
+        },
+        {
+          "alert": "MonitoringTextfileError",
+          "expr": "node_textfile_scrape_error{job=\"smokemap-monitoring\"} != 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: private exporter cannot parse textfile; check numeric publication"
+          }
+        },
+        {
+          "alert": "MonitoringSourceFailure",
+          "expr": "smokemap_source_success{job=\"smokemap-monitoring\",source!=\"backup\"} == 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} probe/read failed; check source locally"
+          }
+        },
+        {
+          "alert": "MonitoringSourceStale",
+          "expr": "time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",source!=\"backup\"} > 180",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} success stale (>180s); check source locally"
+          }
+        },
+        {
+          "alert": "MonitoringSourceAbsent",
+          "expr": "smokemap_source_expected{job=\"smokemap-monitoring\"} unless on(job,instance,source) smokemap_source_success{job=\"smokemap-monitoring\"}",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} success metric absent; check collector/config"
+          }
+        },
+        {
+          "alert": "MonitoringSourceTimestampAbsent",
+          "expr": "smokemap_source_expected{job=\"smokemap-monitoring\"} unless on(job,instance,source) smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\"}",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} freshness metric absent; check collector/config"
+          }
+        },
+        {
+          "alert": "SmokemapContainerDown",
+          "expr": "smokemap_container_running{job=\"smokemap-monitoring\"} == 0 or (smokemap_container_health{job=\"smokemap-monitoring\"} == 0 and on(job,instance,source) smokemap_container_health_configured{job=\"smokemap-monitoring\"} == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container stopped/unhealthy; inspect locally"
+          }
+        },
+        {
+          "alert": "SmokemapContainerRestarting",
+          "expr": "increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\"}[10m]) > 2",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container restarting (>2/10m); inspect locally"
+          }
+        },
+        {
+          "alert": "HCPExpiredLeases",
+          "expr": "smokemap_hcp_expired_leases{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} HCP running leases expired beyond 120s grace"
+          }
+        },
+        {
+          "alert": "HCPQueueOld",
+          "expr": "smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\"} > 1800",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} HCP queue age exceeds 1800s; investigate scheduler"
+          }
+        },
+        {
+          "alert": "HCPFailures",
+          "expr": "smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} HCP failures observed in last hour; investigate locally"
+          }
+        },
+        {
+          "alert": "HCPUnknownStatus",
+          "expr": "smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} HCP unknown statuses; verify schema mapping"
+          }
+        },
+        {
+          "alert": "BackupEvidenceMissing",
+          "expr": "absent(smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\"})",
+          "for": "15m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: backup verified-success evidence missing; backup/restore gap OPEN"
+          }
+        },
+        {
+          "alert": "BackupEvidenceStale",
+          "expr": "time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\"} > 86400",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: backup verification older than 86400s; verify backup pipeline"
+          }
+        },
+        {
+          "alert": "MonitoringConfiguredSourceAbsent",
+          "expr": "absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_api\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"frontend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"backend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_runtime\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_queue\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"backup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} required source missing from inventory; restore config"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_running",
+          "expr": "absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container_running aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_health",
+          "expr": "absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container_health aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_health_configured",
+          "expr": "absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container_health_configured aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_restarts_total",
+          "expr": "absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} container_restarts_total aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_queue_count",
+          "expr": "absent(smokemap_hcp_queue_count{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_queue_count aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_queue_oldest_age_seconds",
+          "expr": "absent(smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_queue_oldest_age_seconds aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_expired_leases",
+          "expr": "absent(smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_expired_leases aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_failures_last_hour",
+          "expr": "absent(smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_failures_last_hour aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_approval_waits",
+          "expr": "absent(smokemap_hcp_approval_waits{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_approval_waits aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_unknown_status_count",
+          "expr": "absent(smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.source }} hcp_unknown_status_count aggregate absent; check source/collector"
+          }
+        },
+        {
+          "alert": "JenkinsInodesLow",
+          "expr": "(node_filesystem_files_free{job=\"linux\",instance=\"192.168.56.5:9100\",fstype!~\"tmpfs|devtmpfs|squashfs|overlay\"} / node_filesystem_files{job=\"linux\",instance=\"192.168.56.5:9100\"} < 0.10) and on(job,instance,device,mountpoint) (node_filesystem_readonly{job=\"linux\",instance=\"192.168.56.5:9100\"} == 0) and on(job,instance,device,mountpoint) (node_filesystem_files{job=\"linux\",instance=\"192.168.56.5:9100\"} > 0)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins {{ $labels.mountpoint }}: free inodes below 10%; investigate file growth"
+          }
+        },
+        {
+          "alert": "JenkinsInodeMetricsAbsent",
+          "expr": "absent(node_filesystem_files{job=\"linux\",instance=\"192.168.56.5:9100\"}) or absent(node_filesystem_files_free{job=\"linux\",instance=\"192.168.56.5:9100\"}) or absent(node_filesystem_readonly{job=\"linux\",instance=\"192.168.56.5:9100\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Jenkins: inode metrics absent on existing linux/9100 job; check filesystem collector"
+          }
+        }
+      ]
+    }
+  ]
+}

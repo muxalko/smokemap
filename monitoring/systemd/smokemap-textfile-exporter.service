@@ -1,0 +1,11 @@
+[Unit]
+Description=Separate private textfile-only exporter (existing 9100 unchanged)
+[Service]
+EnvironmentFile=%h/.config/smokemap-monitoring/exporter.env
+ExecStart=/usr/bin/prometheus-node-exporter --web.listen-address=${MONITORING_LISTEN} --collector.disable-defaults --collector.textfile --collector.textfile.directory=%h/.local/state/smokemap-monitoring/metrics
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+UMask=0077
+[Install]
+WantedBy=default.target

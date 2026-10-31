@@ -1,5 +1,11 @@
 # Smokemap execution roadmap
 
+Monitoring source follow-up (root #138): [HCP/Smokemap monitoring](../monitoring/README.md)
+adds private textfile collection, explicit backup evidence and freshness/absence
+alerts. Telegram remains primary; email remains optional and the existing cleanup
+monitor stays enabled. Host installation, real delivery, backup pipeline and
+independent exact-head review remain operator evidence; source is not deployment.
+
 Status: Active planning document
 
 Last updated: 2026-10-26 (client decision date)
