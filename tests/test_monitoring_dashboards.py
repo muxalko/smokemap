@@ -57,6 +57,9 @@ def backup_semantics():
     ]
     tests = []
     for name, success, verified, up, collector, error, expected in cases:
+        # Arithmetic on(job,instance,source) drops host in the success branch.
+        # The failed-source scalar branch retains all source labels.
+        result_labels = source_labels if success == 0 else 'job="smokemap-monitoring",instance="fixture",source="backup"'
         metrics = [
             (f'up{{{labels}}}', up),
             (f'smokemap_collector_timestamp_seconds{{{labels}}}', collector),
@@ -73,7 +76,7 @@ def backup_semantics():
                               if p['title'] == 'Backup readiness')['targets'][0]['expr'],
                  'eval_time': '25h',
                  'exp_samples': [] if expected is None else [
-                     {'labels': '{' + source_labels + '}', 'value': expected}]}
+                     {'labels': '{' + result_labels + '}', 'value': expected}]}
                 for d in ('overview', 'smokemap')],
         })
     return {'rule_files': [], 'evaluation_interval': '25h', 'tests': tests}
