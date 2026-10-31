@@ -135,7 +135,8 @@ semantics when integrating. Do not silently route them to a null receiver.
    scrape/evaluation. Run `promtool check config` on the assembled config and
    `promtool check rules`, then reload using existing lifecycle support. Do not
    replace `/opt/monitoring`, receiver definitions, routes, credentials or targets.
-   Import `grafana-dashboard.json`, select the existing Prometheus datasource.
+   Import the [three-dashboard suite](dashboards/README.md), selecting the existing
+   Prometheus datasource. `grafana-dashboard.json` remains the Overview entrypoint.
    NO DATA for backup means OPEN. Confirm the 9708 target and 9100 target coexist.
 5. Existing Telegram with send_resolved=true is PRIMARY. Inspect existing routing
    privately and ensure these alert labels reach it. No receiver/secret material
@@ -184,8 +185,9 @@ Disable/stop only `smokemap-monitoring.timer`, `smokemap-monitoring.service` and
 unit files, reload the user manager, remove the dedicated 9708 scrape job and
 monitoring rule file from the monitoring device's config, validate and reload.
 Restore the private pre-change configuration if necessary, preserving subsequent
-unrelated changes. Remove only the dedicated dashboard by UID
-`smokemap-monitoring`. Archive numeric evidence before removing only this
+unrelated changes. Remove only this suite by UID
+`smokemap-monitoring`, `smokemap-health` and `hcp-operations`. Archive numeric
+evidence before removing only this
 package's private metrics/state/config directories. Do not disable the existing
 9100 service, cleanup monitor, Telegram routing or any application. Never prune
 Docker resources, volumes, other worktrees or root-owned monitoring files.

@@ -1,0 +1,1495 @@
+{
+  "id": null,
+  "uid": "smokemap-health",
+  "title": "Smokemap \u00b7 Development health",
+  "description": "Operational signals and explicit readiness gaps. Missing observations are unknown.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "tags": [
+    "smokemap",
+    "operations"
+  ],
+  "graphTooltip": 1,
+  "links": [
+    {
+      "title": "Overview",
+      "type": "link",
+      "url": "/d/smokemap-monitoring",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    },
+    {
+      "title": "Smokemap",
+      "type": "link",
+      "url": "/d/smokemap-health",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    },
+    {
+      "title": "HCP",
+      "type": "link",
+      "url": "/d/hcp-operations",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "prometheus",
+        "refresh": 1,
+        "options": [],
+        "hide": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "description": "## Operations / Smokemap\nDevelopment environment availability and recovery readiness. **Check backup readiness and verified age.** Container state does not prove submission or authorization workflows.",
+      "pluginVersion": "11.3.1",
+      "options": {
+        "mode": "markdown",
+        "content": "## Operations / Smokemap\nDevelopment environment availability and recovery readiness. **Check backup readiness and verified age.** Container state does not prove submission or authorization workflows."
+      }
+    },
+    {
+      "id": 2,
+      "title": "Web",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Docker running and configured health check. Missing or unsupported checks stay UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Web",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 3,
+      "title": "API",
+      "type": "stat",
+      "gridPos": {
+        "x": 4,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Docker running and configured health check. Missing or unsupported checks stay UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "API",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 4,
+      "title": "Database",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Docker running and configured health check. Missing or unsupported checks stay UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Database",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 5,
+      "title": "Storage",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Docker running and configured health check. Missing or unsupported checks stay UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Storage",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 6,
+      "title": "Cleanup",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Docker running and configured health check. Missing or unsupported checks stay UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Cleanup",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 7,
+      "title": "Restarts \u00b7 1h",
+      "type": "stat",
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Total counter increases across all five development services in the last hour. All five observations required; container recreation may reset counters.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0))) and (count(((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)) or ((increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"}[1h])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0))) == 5)",
+          "legendFormat": "Restarts \u00b7 1h",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 8,
+      "title": "Five-service state",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 7
+      },
+      "description": "1 healthy / 0 failed. Gray or gaps mean unknown, stale or unsupported health checks.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Web",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Database",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Storage",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "(smokemap_container_health{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} * on(job,instance,source) smokemap_container_running{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} and on(job,instance,source) (smokemap_container_health_configured{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Cleanup",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false,
+            "lineWidth": 0,
+            "fillOpacity": 85
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "rowHeight": 0.75,
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Restarts \u00b7 increments / 10m",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Counter increases per service over 10 minutes. Container recreation may reset the counter; not deployment history.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"}[10m])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Web",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"}[10m])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "(increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"}[10m])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Database",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "(increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"}[10m])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Storage",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "(increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"}[10m])) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Cleanup",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Docker inspection failures",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "description": "1 = Docker state could not be read; 0 = successful inspection. Container health is shown in Five-service state. Gaps are unknown.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Web",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(1 - smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "(1 - smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Database",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "(1 - smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Storage",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "(1 - smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Cleanup",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Backup readiness",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 8,
+        "h": 4
+      },
+      "description": "READY requires verified backup and restore evidence aged 0\u201324h. Failed reads, old or future evidence are OPEN; missing telemetry stays UNKNOWN.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"} == 0) * 1 or ((smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"} == 1) * on(job,instance,source) ((time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) <= bool 86400) * on(job,instance,source) ((time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) >= bool 0))) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Backup readiness",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OPEN",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "READY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 12,
+      "title": "Verified backup age",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 22,
+        "w": 8,
+        "h": 4
+      },
+      "description": "Age of verified backup and restore evidence. Missing evidence reads NO EVIDENCE / OPEN; future timestamps are invalid; older than 24h requires action.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Verified backup age",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "NO EVIDENCE / OPEN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "orange",
+                "value": 86400
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "NO EVIDENCE / OPEN",
+                  "color": "orange"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 13,
+      "title": "Readiness gap",
+      "type": "text",
+      "gridPos": {
+        "x": 16,
+        "y": 22,
+        "w": 8,
+        "h": 4
+      },
+      "description": "### Verify recoverability\nREADY requires a verified backup and restore within 24h. Investigate OPEN or missing evidence before declaring recovery readiness. Never substitute file age or a successful copy.",
+      "pluginVersion": "11.3.1",
+      "options": {
+        "mode": "markdown",
+        "content": "### Verify recoverability\nREADY requires a verified backup and restore within 24h. Investigate OPEN or missing evidence before declaring recovery readiness. Never substitute file age or a successful copy."
+      }
+    },
+    {
+      "id": 14,
+      "title": "Source observation age",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Age of successful observations with valid timestamps; over 180s needs attention. Failed reads and invalid timestamps are gaps; failures remain visible in Docker inspection failures and Five-service state.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_frontend\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Web",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_backend\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_db\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Database",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "D",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_storage\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Storage",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "E",
+          "expr": "((time() - (smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} > 0)) >= 0) and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"dev_media_cleanup\"} == 1) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Cleanup",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 180
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Host data volume \u00b7 free space",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 26,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Available bytes on the shared Jenkins host data filesystem; this is shared host storage, not application-specific capacity.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_filesystem_avail_bytes{job=\"linux\",host=\"jenkins\",mountpoint=\"/data\"} and on(job,instance) (up{job=\"linux\",host=\"jenkins\"} == 1)",
+          "legendFormat": "Host data volume",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": false,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "Firing alerts \u00b7 action context",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 16,
+        "h": 6
+      },
+      "description": "No rows means no matching firing alerts. Check monitoring health and the Prometheus signal before concluding all clear.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "ALERTS{monitoring_scope=\"smokemap_hcp\",alertstate=\"firing\",source=~\"dev_.*|frontend|backend|backup|\"}",
+          "legendFormat": "",
+          "editorMode": "code",
+          "range": false,
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "\u2014",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "\u2014",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "frontend": {
+                        "text": "Web"
+                      },
+                      "backend": {
+                        "text": "API"
+                      },
+                      "dev_frontend": {
+                        "text": "Web"
+                      },
+                      "dev_backend": {
+                        "text": "API"
+                      },
+                      "dev_db": {
+                        "text": "Database"
+                      },
+                      "dev_storage": {
+                        "text": "Storage"
+                      },
+                      "dev_media_cleanup": {
+                        "text": "Cleanup"
+                      },
+                      "hcp_api": {
+                        "text": "HCP API"
+                      },
+                      "hcp_runtime": {
+                        "text": "HCP runtime"
+                      },
+                      "hcp_queue": {
+                        "text": "HCP queue"
+                      },
+                      "backup": {
+                        "text": "Backup"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": {
+              "alertname": true,
+              "source": true,
+              "severity": true
+            },
+            "renameByName": {
+              "alertname": "Alert",
+              "source": "Source",
+              "severity": "Severity"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Coverage",
+      "type": "text",
+      "gridPos": {
+        "x": 16,
+        "y": 33,
+        "w": 8,
+        "h": 6
+      },
+      "description": "### Availability, not traffic\nWeb/API probes, database, storage and cleanup state are collected. No HTTP request rate, p95 latency or submission throughput is available.\n\nInspect firing alerts and missing observations before declaring recovery complete.",
+      "pluginVersion": "11.3.1",
+      "options": {
+        "mode": "markdown",
+        "content": "### Availability, not traffic\nWeb/API probes, database, storage and cleanup state are collected. No HTTP request rate, p95 latency or submission throughput is available.\n\nInspect firing alerts and missing observations before declaring recovery complete."
+      }
+    }
+  ]
+}
