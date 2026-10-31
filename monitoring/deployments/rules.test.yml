@@ -163,6 +163,16 @@
           "expr": "count((deployment_overdue_jobs{job=\"smokemap-monitoring\",host=\"jenkins\"} > 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1))",
           "eval_time": "10m",
           "exp_samples": []
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -1208,6 +1218,16 @@
               "value": 1
             }
           ]
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 0
+            }
+          ]
         }
       ]
     },
@@ -1358,6 +1378,16 @@
             {
               "labels": "{}",
               "value": 1
+            }
+          ]
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 0
             }
           ]
         }
@@ -1512,6 +1542,16 @@
               "value": 1
             }
           ]
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 0
+            }
+          ]
         }
       ]
     },
@@ -1659,6 +1699,16 @@
           "expr": "count((deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance) ((up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)))",
           "eval_time": "10m",
           "exp_samples": []
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 0
+            }
+          ]
         }
       ]
     },
@@ -1806,6 +1856,16 @@
           "expr": "count((deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance) ((up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)))",
           "eval_time": "10m",
           "exp_samples": []
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": [
+            {
+              "labels": "deployment_collector_fresh{job=\"smokemap-monitoring\",instance=\"fixture\",host=\"jenkins\"}",
+              "value": 0
+            }
+          ]
         }
       ]
     },
@@ -1949,6 +2009,11 @@
           "expr": "sum(deployment_service_state)",
           "eval_time": "10m",
           "exp_samples": []
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
+          "eval_time": "10m",
+          "exp_samples": []
         }
       ]
     },
@@ -2080,6 +2145,11 @@
       "promql_expr_test": [
         {
           "expr": "count(absent(deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) and on(host) ((up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)))",
+          "eval_time": "10m",
+          "exp_samples": []
+        },
+        {
+          "expr": "deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"}",
           "eval_time": "10m",
           "exp_samples": []
         }

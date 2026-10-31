@@ -6,7 +6,7 @@
       "rules": [
         {
           "record": "deployment_collector_fresh",
-          "expr": "((deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > bool 0) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} >= bool (time()-180)) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} <= bool time())) * on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 1) * on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 0)"
+          "expr": "((deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > bool 0) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} >= bool (time()-180)) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} <= bool time())) * on(job,instance,host) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 1) * on(job,instance,host) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 0)"
         },
         {
           "record": "deployment_service_state",
