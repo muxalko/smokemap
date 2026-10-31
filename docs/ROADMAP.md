@@ -400,8 +400,10 @@ an explicit final deployment decision. Quick Tunnels remain staging tools.
 
 The [31 October security assessment](M5_SECURITY_ASSESSMENT_20261031.md)
 inventories exact committed pins separately from unavailable running-source/
-image evidence. Django 4.2.22 remains unsupported; successful direct advisory
-queries are partial coverage and broader scans are incomplete. No launch
+image evidence. Django 4.2.22 remains unsupported; six completed direct-package advisory
+queries identify 56 records, including critical Pillow and PyJWT matches.
+These remain unaccepted findings; resolved graphs, running identities and
+image/native scans plus durable private evidence archival are incomplete. No launch
 clearance follows. Complete the assessment/security remediation before launch.
 
 Node/Python modernization beyond supported bridge runtimes, PostGIS minor

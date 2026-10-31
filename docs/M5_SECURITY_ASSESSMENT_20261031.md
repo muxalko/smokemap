@@ -109,7 +109,7 @@ must record database freshness, tool versions, exit codes and pagination.
 
 Patch numbers in individual advisories are historical first fixes, not current
 upgrade targets. No vulnerability was fixed or accepted as inapplicable by
-this assessment. The list covers Django only; other packages remain unassessed.
+this assessment. The initial list covers Django only; the follow-up below adds five direct-package queries. All other packages remain unassessed.
 
 ## Support review and prioritized acceptance plan
 
@@ -160,12 +160,104 @@ next implementation advances. Planning can proceed across lanes.
    the explicit conditions in Launch gates. Unsupported frameworks, unsafe
    endpoints, missing basic monitoring or unreconciled served data cannot defer.
 
+## Follow-up evidence captured at 06:54 UTC
+
+The continuation started at root `15b57e5eb2a74c1676d14adb3ee708c62f0afc4c`
+on the existing clean assessment branch, preserving its commits. A fresh fetch
+confirmed remote root `development` remained
+`215bd7a5c3b000d605600ed33710a0285f619c40`; `git ls-remote` confirmed both
+application `development` heads still matched the full gitlinks above. This
+records remote source identity, not the sources used by any running service.
+The original operational checkout was not inspected or modified.
+
+Six completed direct-package GitHub advisory queries ran from
+2026-10-31T06:54:39Z to 06:54:51Z, each exit 0 and each returning fewer than
+100 records (one page). The command is the same API method documented above.
+Tooling: GitHub CLI 2.98.0 (2026-08-20), Python 3.12.3, Git 2.50.1;
+Docker client 28.1.1 and Compose v2.35.1. Host Node v24.19.0 and Yarn 1.22.22
+were inventoried only; they are not the application runtime. GitHub's live
+advisory service has no exposed database snapshot/version identifier here;
+per-record publication/update/withdrawal timestamps are retained. Coverage is
+reviewed non-malware version matches only, without exploitability analysis.
+
+| Direct declared package | Critical | High | Medium | Low | Records |
+| --- | --- | --- | --- | --- | --- |
+| Django 4.2.22 | 1 | 2 | 3 | 5 | 11 |
+| Next.js 15.5.28 | 0 | 0 | 0 | 0 | 0 |
+| Pillow 10.4.0 | 3 | 19 | 9 | 0 | 31 |
+| urllib3 1.26.19 | 0 | 6 | 1 | 0 | 7 |
+| PyJWT 2.8.0 | 1 | 2 | 4 | 0 | 7 |
+| Gunicorn 23.0.0 | 0 | 0 | 0 | 0 | 0 |
+
+These 56 package/advisory records are a partial declared-input assessment,
+not findings against a resolved production graph or installed runtime. Zero
+records in a direct query do not clear that package or its dependencies.
+[Sanitized advisory results](M5_ADVISORY_RESULTS_20261031.json) retain every
+returned public ID, severity, summary, affected range and first-fix version,
+including records not individually discussed here. SHA-256:
+`b4ec6a29904a45573a416c15c966064815f992c8e2a85468dd8bb90523545b29`.
+First fixes are historical advisory data, not recommended upgrade targets.
+
+Priority applicability observations, without granting exceptions:
+
+- Pillow's [JPEG decoder overflow](https://github.com/advisories/GHSA-8g5g-8vmr-9782)
+  is critical and potentially relevant: `backend/media.py` opens, verifies,
+  reopens and decodes submitted image bytes. Signature, dimension and area
+  checks do not establish immunity to a decoder memory defect. Review all
+  accepted JPEG/PNG/WebP decoding and rendition paths against the full list.
+- Critical Pillow [TIFF encoder overflow](https://github.com/advisories/GHSA-332p-7hrc-92wf)
+  and [Ghostscript argument injection](https://github.com/advisories/GHSA-w889-685w-c8fh)
+  depend on different formats/helpers. Current accepted signatures and
+  rendition formats narrow exposure, but do not prove absence of all other
+  call sites or plugins in the actual release. No platform/format exception
+  is accepted here; assess native libraries and the deployed image too.
+- Critical PyJWT [asymmetric-key confusion](https://github.com/advisories/GHSA-ffc3-869f-jxw9)
+  needs release-configuration review. `backend/tokens.py` passes a configured
+  key and an explicit singleton algorithm list; its default is HS256.
+  That is useful context, not proof of safe production key/algorithm handling.
+  Review third-party JWT consumers, JWK/redirect paths, parsing DoS and the
+  raw-token revocation finding. Never collect the key itself as scan evidence.
+- urllib3's six high findings concern response/decompression bounds,
+  redirects, sensitive headers and proxy TLS. Review boto/storage clients and
+  outbound request usage/configuration; availability or disclosure impact
+  cannot be dismissed solely because browsers do not call this library.
+
+Supported-framework migration and these direct-library dispositions belong
+in the first bounded backend remediation lane, with media/JWT/authorization
+and cross-app regression acceptance. Full transitive/native/image assessment
+remains a separate mandatory evidence gate. Recheck supported patches when
+implementing; none of these queries changes dependencies.
+
+Private raw stdout/stderr and a timestamped command/exit/hash index were
+captured outside Git in a mode-0700 temporary evidence directory, with
+mode-0600 files. Index SHA-256:
+`6411ce2392ed1e41e37dfe8f732279d35df3f00d648d04386fd7457ecdadd567`.
+The evidence location is supplied privately in the implementation handoff.
+This sandbox cannot publish it to the established Jenkins evidence store
+without the prohibited orchestration path. Durable Jenkins archival remains
+**incomplete**; temporary evidence must be retained by the operator before
+cleanup. No private paths, environments, credentials or raw operational dumps
+are included in the committed results.
+
+A repeated allowlisted Docker inventory at 06:54:39Z exited 1 with socket
+access denied. Scanner discovery found no Trivy, Grype, Syft, OSV Scanner or
+pip-audit. No image/OS/native/Go scan ran, and no image was pulled or built.
+Complete graph scanning, actual runtime identity and immutable image evidence
+therefore remain open. Official Django, Next.js, Python and Node support
+pages linked above were rechecked during this continuation; the support
+conclusions are unchanged.
+
 ## Proportional verification
 
 Docs-only changes preserve gitlinks, application manifests/locks and runtime
 configuration. `make check-compose`, `make check-staging` and
 `make check-local-staging` passed without service startup. `git diff --check`
-and documentation-link validation are recorded in the PR. Application tests,
+and documentation-link validation are recorded in the PR. Follow-up reruns
+passed Compose validation and 52 local-staging tests. The first staging rerun
+failed (six failures/two errors) because private evidence capture inherited
+umask 077, creating fixture directories as 0700 instead of the expected 0750.
+With test-process umask 022, all 43 staging tests passed; no repository or
+operational permissions were changed. Both attempts are retained in evidence. Application tests,
 E2E, production acceptance and container scans were not run in this assessment;
 required PR CI and independent exact-head review remain separate gates. No
 merge or deployment is authorized by these checks.
