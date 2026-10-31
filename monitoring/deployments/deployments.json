@@ -1,0 +1,1457 @@
+{
+  "uid": "jenkins-deployments",
+  "title": "Jenkins deployments",
+  "schemaVersion": 40,
+  "version": 1,
+  "tags": [
+    "deployments",
+    "jenkins"
+  ],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "editable": true,
+  "panels": [
+    {
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "### Deployment health\n20 expected services \u00b7 4 deployments. Gray gaps mean UNKNOWN. Container image revision does not prove development bind-mounted code."
+      },
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      }
+    },
+    {
+      "title": "Expected services",
+      "type": "stat",
+      "description": "Full inventory: development 5, Quick staging 7, local staging 6, web-checker production 2. Selection narrows these totals; inventory alert catches omitted expectations.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Running",
+      "type": "stat",
+      "description": "Valid observed running containers, including blue services without healthchecks. Check UNKNOWN count alongside this card.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(count(deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} >= 2) or (sum(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) * 0))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Missing / stopped / unhealthy",
+      "type": "stat",
+      "description": "Only valid Docker observations; read failures counted separately.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(count(deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} < 2) or (sum(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) * 0))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "UNKNOWN services",
+      "type": "stat",
+      "description": "Expected inventory without a valid fresh state. Incomplete observation cannot yield a full-green summary.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(count((deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) unless on(job,instance,application,environment,deployment,service) deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"}) or (sum(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) * 0))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "gray",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Running \u00b7 no healthcheck",
+      "type": "stat",
+      "description": "Informational blue. Maintenance has no Docker healthcheck; running is not proof of health.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(count(deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} == 2) or (sum(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) * 0))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 6,
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "title": "Collector age",
+      "type": "stat",
+      "description": "UNKNOWN if exporter/textfile unavailable, collector stale, future or missing.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(time()-deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 180
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 8,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "title": "Firing alerts",
+      "type": "stat",
+      "description": "Scoped service alerts. Shared collector alerts are in the original overview; no-data never proves delivery.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(ALERTS{host=\"jenkins\",monitoring_scope=\"deployments\",alertstate=\"firing\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"}) or (sum(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) * 0)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 16,
+        "y": 7,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "title": "Service states",
+      "type": "state-timeline",
+      "description": "HEALTHY green; no check blue; failed red; observation gaps UNKNOWN. Fixed Compose service aliases.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} or (((deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) unless on(job,instance,application,environment,deployment,service) deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"}) * 4)",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "MISSING / STOPPED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UNHEALTHY / STARTING",
+                  "color": "red",
+                  "index": 1
+                },
+                "2": {
+                  "text": "RUNNING \u00b7 NO CHECK",
+                  "color": "blue",
+                  "index": 2
+                },
+                "3": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 3
+                },
+                "4": {
+                  "text": "UNKNOWN",
+                  "color": "gray",
+                  "index": 4
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 10
+      }
+    },
+    {
+      "title": "Service state table",
+      "type": "table",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} or (((deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) unless on(job,instance,application,environment,deployment,service) deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"}) * 4)",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "MISSING / STOPPED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UNHEALTHY / STARTING",
+                  "color": "red",
+                  "index": 1
+                },
+                "2": {
+                  "text": "RUNNING \u00b7 NO CHECK",
+                  "color": "blue",
+                  "index": 2
+                },
+                "3": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 3
+                },
+                "4": {
+                  "text": "UNKNOWN",
+                  "color": "gray",
+                  "index": 4
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "__name__": true
+            },
+            "renameByName": {
+              "application": "Application",
+              "environment": "Environment",
+              "deployment": "Deployment",
+              "service": "Service",
+              "Value": "Value",
+              "image_digest": "Container image SHA256",
+              "image_revision": "Container image revision"
+            }
+          }
+        }
+      ],
+      "id": 10,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "title": "Readiness / public TLS / supervisor",
+      "type": "state-timeline",
+      "description": "Exact HTTP 200, verified public/local TLS and recorded supervisor PID/start identity. Failed network observations are red; unreadable input is UNKNOWN.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((deployment_probe_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance,application,environment,deployment,probe) (deployment_probe_observation_success == 1) and on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)) or (((deployment_probe_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance) (deployment_collector_fresh == 1)) unless on(job,instance,application,environment,deployment,probe) ((deployment_probe_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance,application,environment,deployment,probe) (deployment_probe_observation_success == 1) and on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1))) * 2)",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{probe}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 1
+                },
+                "2": {
+                  "text": "UNKNOWN",
+                  "color": "gray",
+                  "index": 2
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 24,
+        "h": 8
+      }
+    },
+    {
+      "title": "Top 5 CPU",
+      "type": "timeseries",
+      "description": "Docker-reported CPU can exceed 100% on multiple cores.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(5, deployment_cpu_percent{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance,application,environment,deployment,service) (deployment_resource_success == 1) and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1))",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Top 5 memory usage",
+      "type": "timeseries",
+      "description": "Docker-reported memory usage, not RSS.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(5, deployment_memory_usage_bytes{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance,application,environment,deployment,service) (deployment_resource_success == 1) and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1))",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 12,
+        "y": 37,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Restarts in 10m",
+      "type": "timeseries",
+      "description": "Docker counter increments; a recreated container can reset its counter.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(deployment_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"}[10m]) and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 14,
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Resource telemetry UNKNOWN",
+      "type": "table",
+      "description": "Missing stats for running services and unreadable metadata. Does not change service availability.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} unless on(job,instance,application,environment,deployment,service) (deployment_resource_success == 1)) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "__name__": true
+            },
+            "renameByName": {
+              "application": "Application",
+              "environment": "Environment",
+              "deployment": "Deployment",
+              "service": "Service",
+              "Value": "Value",
+              "image_digest": "Container image SHA256",
+              "image_revision": "Container image revision"
+            }
+          }
+        }
+      ],
+      "id": 15,
+      "gridPos": {
+        "x": 12,
+        "y": 45,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "title": "Container image identity",
+      "type": "table",
+      "description": "CONTAINER IMAGE SHA256 and safe OCI revision. Unknown revision is literal unknown. Bind-mounted development code is not proven by this identity.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_container_info{job=\"smokemap-monitoring\",host=\"jenkins\",application=~\"$application\",environment=~\"$environment\",deployment=~\"$deployment\"} and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "__name__": true
+            },
+            "renameByName": {
+              "application": "Application",
+              "environment": "Environment",
+              "deployment": "Deployment",
+              "service": "Service",
+              "Value": "Value",
+              "image_digest": "Container image SHA256",
+              "image_revision": "Container image revision"
+            }
+          }
+        }
+      ],
+      "id": 16,
+      "gridPos": {
+        "x": 0,
+        "y": 53,
+        "w": 24,
+        "h": 9
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 2,
+        "current": {
+          "text": "Prometheus",
+          "value": "PBFA97CFB590B2093"
+        },
+        "options": []
+      },
+      {
+        "name": "application",
+        "type": "custom",
+        "query": "smokemap,web_checker",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "name": "environment",
+        "type": "custom",
+        "query": "development,staging,production",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "name": "deployment",
+        "type": "custom",
+        "query": "development,quick,local,production",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Deployments",
+      "url": "/d/jenkins-deployments",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Web checker",
+      "url": "/d/web-checker-production",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Original overview",
+      "url": "/d/smokemap-monitoring",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    }
+  ]
+}

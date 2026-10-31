@@ -1,0 +1,368 @@
+{
+  "groups": [
+    {
+      "name": "deployments",
+      "interval": "30s",
+      "rules": [
+        {
+          "record": "deployment_collector_fresh",
+          "expr": "((deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > bool 0) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} >= bool (time()-180)) * (deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} <= bool time())) * on(job,instance,host) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 1) * on(job,instance,host) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == bool 0)"
+        },
+        {
+          "record": "deployment_service_state",
+          "expr": "deployment_state{job=\"smokemap-monitoring\",host=\"jenkins\"} and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1)"
+        },
+        {
+          "alert": "DeploymentCollectorMissing",
+          "expr": "absent(deployment_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) and on(host) ((up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: deployment collector absent; check separate user timer"
+          }
+        },
+        {
+          "alert": "DeploymentCollectorInvalid",
+          "expr": "(deployment_collector_fresh{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance) ((up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: deployment collector stale, future or invalid"
+          }
+        },
+        {
+          "alert": "DeploymentInventoryIncomplete",
+          "expr": "((count by(job,instance,host,application,environment,deployment) (deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"development\",deployment=\"development\"} == 1) != 5) and on(job,instance) (deployment_collector_fresh == 1)) or (absent(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"development\",deployment=\"development\"}) and on(host) (deployment_collector_fresh == 1))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins",
+            "application": "smokemap",
+            "environment": "development",
+            "deployment": "development"
+          },
+          "annotations": {
+            "summary": "Jenkins: development expected inventory incomplete"
+          }
+        },
+        {
+          "alert": "DeploymentInventoryIncomplete",
+          "expr": "((count by(job,instance,host,application,environment,deployment) (deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"staging\",deployment=\"quick\"} == 1) != 7) and on(job,instance) (deployment_collector_fresh == 1)) or (absent(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"staging\",deployment=\"quick\"}) and on(host) (deployment_collector_fresh == 1))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins",
+            "application": "smokemap",
+            "environment": "staging",
+            "deployment": "quick"
+          },
+          "annotations": {
+            "summary": "Jenkins: quick expected inventory incomplete"
+          }
+        },
+        {
+          "alert": "DeploymentInventoryIncomplete",
+          "expr": "((count by(job,instance,host,application,environment,deployment) (deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"staging\",deployment=\"local\"} == 1) != 6) and on(job,instance) (deployment_collector_fresh == 1)) or (absent(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"smokemap\",environment=\"staging\",deployment=\"local\"}) and on(host) (deployment_collector_fresh == 1))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins",
+            "application": "smokemap",
+            "environment": "staging",
+            "deployment": "local"
+          },
+          "annotations": {
+            "summary": "Jenkins: local expected inventory incomplete"
+          }
+        },
+        {
+          "alert": "DeploymentInventoryIncomplete",
+          "expr": "((count by(job,instance,host,application,environment,deployment) (deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} == 1) != 2) and on(job,instance) (deployment_collector_fresh == 1)) or (absent(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"}) and on(host) (deployment_collector_fresh == 1))",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins",
+            "application": "web_checker",
+            "environment": "production",
+            "deployment": "production"
+          },
+          "annotations": {
+            "summary": "Jenkins: production expected inventory incomplete"
+          }
+        },
+        {
+          "alert": "DeploymentObservationUnknown",
+          "expr": "(deployment_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1)) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} container observation UNKNOWN"
+          }
+        },
+        {
+          "alert": "DeploymentResourcesUnknown",
+          "expr": "(deployment_running{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,service) (deployment_resource_success == 1)) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} resource telemetry UNKNOWN"
+          }
+        },
+        {
+          "alert": "DeploymentServiceUnavailable",
+          "expr": "deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",environment!=\"production\"} < 2",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} missing, stopped or unhealthy"
+          }
+        },
+        {
+          "alert": "DeploymentProbeFailed",
+          "expr": "(deployment_probe_success{job=\"smokemap-monitoring\",host=\"jenkins\",environment!=\"production\"} == 0 and on(job,instance,application,environment,deployment,probe) (deployment_probe_observation_success == 1) and on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.probe }} availability failed"
+          }
+        },
+        {
+          "alert": "DeploymentServiceUnavailable",
+          "expr": "deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",environment=\"production\"} < 2",
+          "for": "3m",
+          "labels": {
+            "severity": "critical",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} missing, stopped or unhealthy"
+          }
+        },
+        {
+          "alert": "DeploymentProbeFailed",
+          "expr": "(deployment_probe_success{job=\"smokemap-monitoring\",host=\"jenkins\",environment=\"production\"} == 0 and on(job,instance,application,environment,deployment,probe) (deployment_probe_observation_success == 1) and on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "critical",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.probe }} availability failed"
+          }
+        },
+        {
+          "alert": "DeploymentProbeUnknown",
+          "expr": "(deployment_probe_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,host,application,environment,deployment,probe) ((deployment_probe_observation_success == 1) and on(job,instance,host,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > 0) and (deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time())))) and on(job,instance,host) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.probe }} probe UNKNOWN"
+          }
+        },
+        {
+          "alert": "DeploymentSignalUnknown",
+          "expr": "(deployment_signal_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,host,application,environment,deployment,signal) ((deployment_signal_observation_success == 1) and on(job,instance,host,application,environment,deployment,signal) ((deployment_signal_timestamp_seconds > 0) and (deployment_signal_timestamp_seconds > time()-180) and (deployment_signal_timestamp_seconds <= time())))) and on(job,instance,host) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.signal }} aggregate UNKNOWN"
+          }
+        },
+        {
+          "alert": "DeploymentRestartBurst",
+          "expr": "(increase(deployment_restarts_total{job=\"smokemap-monitoring\",host=\"jenkins\"}[10m]) > 2) and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} repeated restarts"
+          }
+        },
+        {
+          "alert": "DeploymentMemoryHigh",
+          "expr": "(deployment_memory_percent{job=\"smokemap-monitoring\",host=\"jenkins\"} > 90) and on(job,instance,application,environment,deployment,service) (deployment_resource_success == 1) and on(job,instance,application,environment,deployment,service) (deployment_observation_success == 1) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "10m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} memory above 90%"
+          }
+        },
+        {
+          "alert": "WebCheckerOverdue",
+          "expr": "(deployment_overdue_jobs{job=\"smokemap-monitoring\",host=\"jenkins\"} > 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "critical",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker scheduled checks overdue or missing terminal status"
+          }
+        },
+        {
+          "alert": "WebCheckerNoScheduledJobs",
+          "expr": "(deployment_scheduled_jobs{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker no enabled scheduled jobs"
+          }
+        },
+        {
+          "alert": "WebCheckerRepeatedFailures",
+          "expr": "(deployment_repeated_failure_jobs{job=\"smokemap-monitoring\",host=\"jenkins\"} > 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker providers repeatedly failing; inspect privately"
+          }
+        },
+        {
+          "alert": "WebCheckerDeliveryBacklog",
+          "expr": "(deployment_oldest_pending_age_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > 900) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker notification/operational delivery backlog older than 15m"
+          }
+        },
+        {
+          "alert": "WebCheckerDeliveryFailures",
+          "expr": "(deployment_notification_failed_pending{job=\"smokemap-monitoring\",host=\"jenkins\"} > 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker failed deliveries remain pending"
+          }
+        },
+        {
+          "alert": "WebCheckerBackupMissing",
+          "expr": "(deployment_backup_manifest_valid{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"backup\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"backup\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"backup\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker on-host integrity-checked backup missing or invalid"
+          }
+        },
+        {
+          "alert": "WebCheckerMaintenanceMissing",
+          "expr": "(deployment_maintenance_completion_present{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"maintenance_log\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker no maintenance completion evidence in bounded 48h log window"
+          }
+        },
+        {
+          "alert": "WebCheckerBackupStale",
+          "expr": "((time()-deployment_backup_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > 129600) and (deployment_backup_completed_timestamp_seconds > 0) and (deployment_backup_completed_timestamp_seconds <= time())) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"backup\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"backup\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"backup\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker on-host backup older than 36h"
+          }
+        },
+        {
+          "alert": "WebCheckerMaintenanceStale",
+          "expr": "((time()-deployment_maintenance_last_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"} > 129600) and (deployment_maintenance_last_completed_timestamp_seconds > 0) and (deployment_maintenance_last_completed_timestamp_seconds <= time())) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"maintenance_log\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker maintenance completion older than 36h"
+          }
+        },
+        {
+          "alert": "WebCheckerMaintenanceFailed",
+          "expr": "(deployment_maintenance_failures_after_success{job=\"smokemap-monitoring\",host=\"jenkins\"} > 0) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{signal=\"maintenance_log\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} > time()-180) and (deployment_signal_timestamp_seconds{signal=\"maintenance_log\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning",
+            "monitoring_scope": "deployments",
+            "host": "jenkins"
+          },
+          "annotations": {
+            "summary": "Jenkins: web-checker maintenance failed after last completion"
+          }
+        }
+      ]
+    }
+  ]
+}

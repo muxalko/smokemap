@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect deployment metrics every 30 seconds
+
+[Timer]
+OnBootSec=10
+OnUnitActiveSec=30
+AccuracySec=1
+Unit=deployment-monitoring.service
+
+[Install]
+WantedBy=timers.target
