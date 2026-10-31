@@ -20,7 +20,7 @@
       "title": "",
       "options": {
         "mode": "markdown",
-        "content": "### Web-checker production\nRead-only aggregates. Terminal attempt includes success or failure; overdue follows each schedule. Provider failures can warn while the worker stays healthy."
+        "content": "### Web-checker production\nSchedules, delivery and provider failures."
       },
       "id": 1,
       "gridPos": {
@@ -1207,7 +1207,7 @@
       }
     },
     {
-      "title": "On-host backup presence / validity",
+      "title": "On-host backup status",
       "type": "stat",
       "description": "Bounded manifest and matching regular file size. Created by online backup + integrity_check. No off-host or restored-product proof; Smokemap backup gate remains OPEN.",
       "datasource": {

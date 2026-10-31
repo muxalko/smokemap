@@ -20,7 +20,7 @@
       "title": "",
       "options": {
         "mode": "markdown",
-        "content": "### Deployment health\n20 expected services \u00b7 4 deployments. Gray gaps mean UNKNOWN. Container image revision does not prove development bind-mounted code."
+        "content": "### Deployment health\n20 services · 4 deployments · gray = UNKNOWN."
       },
       "id": 1,
       "gridPos": {
@@ -381,7 +381,7 @@
       }
     },
     {
-      "title": "Running \u00b7 no healthcheck",
+      "title": "Running · no healthcheck",
       "type": "stat",
       "description": "Informational blue. Maintenance has no Docker healthcheck; running is not proof of health.",
       "datasource": {
@@ -690,7 +690,7 @@
                   "index": 1
                 },
                 "2": {
-                  "text": "RUNNING \u00b7 NO CHECK",
+                  "text": "RUNNING · NO CHECK",
                   "color": "blue",
                   "index": 2
                 },
@@ -805,7 +805,7 @@
                   "index": 1
                 },
                 "2": {
-                  "text": "RUNNING \u00b7 NO CHECK",
+                  "text": "RUNNING · NO CHECK",
                   "color": "blue",
                   "index": 2
                 },
@@ -1164,7 +1164,9 @@
           },
           "custom": {
             "spanNulls": false,
-            "insertNulls": false
+            "insertNulls": false,
+            "axisSoftMin": 0,
+            "axisSoftMax": 1
           },
           "mappings": [],
           "thresholds": {
@@ -1212,7 +1214,7 @@
     {
       "title": "Resource telemetry UNKNOWN",
       "type": "table",
-      "description": "Missing stats for running services and unreadable metadata. Does not change service availability.",
+      "description": "Lists resource exceptions only while the collector is fresh. An em dash means no rows; check Collector age to distinguish no exceptions from unavailable monitoring.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -1232,7 +1234,7 @@
         "defaults": {
           "unit": "short",
           "decimals": 0,
-          "noValue": "UNKNOWN",
+          "noValue": "—",
           "color": {
             "mode": "palette-classic"
           },
@@ -1294,7 +1296,7 @@
     {
       "title": "Container image identity",
       "type": "table",
-      "description": "CONTAINER IMAGE SHA256 and safe OCI revision. Unknown revision is literal unknown. Bind-mounted development code is not proven by this identity.",
+      "description": "CONTAINER IMAGE SHA256 and safe OCI revision. Unknown revision is literal unknown. Bind-mounted development code is not proven by this identity. Development bind-mounted files can differ from the container image revision.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
