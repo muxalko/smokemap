@@ -2,8 +2,8 @@
 
 Decision: 2026-10-30 (America/Los_Angeles); synchronized 2026-10-31 under
 [root #134](https://github.com/muxalko/smokemap/issues/134). Authority: the
-approved production-launch decision, supplied to the implementer at
-`/home/michael/.local/state/smokemap-production-launch-decision-20261030.md`.
+approved production-launch decision, supplied to the implementer as a private
+operator record outside every repository and intentionally not published.
 This page preserves its substantive requirements in the repository. It does
 not authorize deployment or declare readiness. M5 remains Current.
 
@@ -34,7 +34,7 @@ launch review. No blanket exception follows from this table.
 | --- | --- |
 | Node/Python modernization beyond supported bridge versions | Launch runtimes remain supported, patched and compatible. Unsupported Next.js or Django is a launch blocker. |
 | PostGIS minor upgrade | Current pairing remains supported/patched and spatial/recovery checks pass. |
-| Full legacy migration | Excluded records are safely preserved; every served record/media object is reconciled. |
+| Full legacy migration | Unmigrated records are excluded from launch and safely preserved; every served record/media object is reconciled. |
 | GraphQL retirement and duplicate-path removal | Existing endpoints cannot bypass authorization or the supported write workflow. Fix or disable unsafe endpoints before launch. |
 | Broad API consolidation | Launch frontend contract is documented/tested, with no unsupported external-client promise. |
 | Tailwind cleanup and refactoring | No launch-impacting defect or production-build blocker depends on them. |

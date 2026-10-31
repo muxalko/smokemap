@@ -404,8 +404,8 @@ image evidence. Django 4.2.22 remains unsupported; successful direct advisory
 queries are partial coverage and broader scans are incomplete. No launch
 clearance follows. Complete the assessment/security remediation before launch.
 
-Supported bridge runtimes, PostGIS minor modernization, excluded legacy-data
-migration, safe GraphQL/duplicate-path retirement, broad API consolidation,
+Node/Python modernization beyond supported bridge runtimes, PostGIS minor
+modernization, excluded legacy-data migration, safe GraphQL/duplicate-path retirement, broad API consolidation,
 Tailwind cleanup, advanced observability and HA may follow launch only under
 the explicit conditions in the launch-gate table. Deferral retains tracked
 work. The full M5 ordered work and exit criteria below remain required for an
