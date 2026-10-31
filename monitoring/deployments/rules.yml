@@ -182,7 +182,7 @@
         },
         {
           "alert": "DeploymentProbeUnknown",
-          "expr": "(deployment_probe_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,probe) (deployment_probe_observation_success == 1) and on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)",
+          "expr": "(deployment_probe_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,host,application,environment,deployment,probe) ((deployment_probe_observation_success == 1) and on(job,instance,host,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > 0) and (deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time())))) and on(job,instance,host) (deployment_collector_fresh == 1)",
           "for": "3m",
           "labels": {
             "severity": "warning",
@@ -195,7 +195,7 @@
         },
         {
           "alert": "DeploymentSignalUnknown",
-          "expr": "(deployment_signal_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,signal) (deployment_signal_observation_success == 1)) and on(job,instance) (deployment_collector_fresh == 1)",
+          "expr": "(deployment_signal_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,host,application,environment,deployment,signal) ((deployment_signal_observation_success == 1) and on(job,instance,host,application,environment,deployment,signal) ((deployment_signal_timestamp_seconds > 0) and (deployment_signal_timestamp_seconds > time()-180) and (deployment_signal_timestamp_seconds <= time())))) and on(job,instance,host) (deployment_collector_fresh == 1)",
           "for": "3m",
           "labels": {
             "severity": "warning",
@@ -230,32 +230,6 @@
           },
           "annotations": {
             "summary": "Jenkins: {{ $labels.deployment }}/{{ $labels.service }} memory above 90%"
-          }
-        },
-        {
-          "alert": "DeploymentProbeTimestampInvalid",
-          "expr": "(deployment_probe_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,probe) ((deployment_probe_timestamp_seconds > time()-180) and (deployment_probe_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)",
-          "for": "3m",
-          "labels": {
-            "severity": "warning",
-            "monitoring_scope": "deployments",
-            "host": "jenkins"
-          },
-          "annotations": {
-            "summary": "Jenkins: {{ $labels.deployment }} signal timestamp missing, stale or future"
-          }
-        },
-        {
-          "alert": "DeploymentSignalTimestampInvalid",
-          "expr": "(deployment_signal_expected{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1 unless on(job,instance,application,environment,deployment,signal) ((deployment_signal_timestamp_seconds > time()-180) and (deployment_signal_timestamp_seconds <= time()))) and on(job,instance) (deployment_collector_fresh == 1)",
-          "for": "3m",
-          "labels": {
-            "severity": "warning",
-            "monitoring_scope": "deployments",
-            "host": "jenkins"
-          },
-          "annotations": {
-            "summary": "Jenkins: {{ $labels.deployment }} signal timestamp missing, stale or future"
           }
         },
         {

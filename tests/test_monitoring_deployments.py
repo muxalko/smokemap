@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, call, MagicMock
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'monitoring/deployments'
@@ -37,11 +37,12 @@ def row(project='smokemap', service='backend', identity='a'*64, health='healthy'
             'sha256:'+'b'*64, 'c'*40, DATE, DATE if running else '0001-01-01T00:00:00Z']
 
 
-def offline(rows=None, stats=None):
+def offline(rows=None, stats=None, calls=None):
     with ExitStack() as stack:
         stack.enter_context(patch.object(c, 'snapshot', return_value=rows or []))
         for name in ('host_probe', 'exec_probe', 'local_probe', 'supervisor_probe'):
-            stack.enter_context(patch.object(c, name, return_value=1))
+            mock = stack.enter_context(patch.object(c, name, return_value=1))
+            if calls is not None: calls[name] = mock
         stack.enter_context(patch.object(c, 'quick_state', return_value={'connectors':{
             'quick-app':{'origin':'https://fake-app.trycloudflare.com'},
             'quick-media':{'origin':'https://fake-media.trycloudflare.com'}}}))
@@ -144,6 +145,30 @@ class ProbeTests(unittest.TestCase):
             with self.assertRaises(ValueError):probes.exec_probe('a'*64,False)
         self.assertIn('signal.alarm(3)',probes.PYTHON)
         self.assertIn('3000',probes.NODE)
+
+    def test_staging_backend_fixed_headers_and_status(self):
+        # Execute the exact embedded probe without network or Docker. Redirects
+        # and bad hosts fail; the only accepted response is 200, without a read.
+        for status,want in ((200,'1'),(301,'0'),(400,'0'),(503,'0')):
+            connection=MagicMock()
+            connection.getresponse.return_value.status=status
+            with patch('http.client.HTTPConnection',return_value=connection) as factory, \
+                    patch('signal.signal'),patch('signal.alarm'),patch('builtins.print') as output:
+                exec(probes.PYTHON,{})
+            factory.assert_called_once_with('127.0.0.1',8000,timeout=2.5)
+            connection.request.assert_called_once_with('GET','/health/ready/',
+                headers={'Host':'api.smokemap-staging.internal','X-Forwarded-Proto':'https'})
+            connection.getresponse.return_value.read.assert_not_called()
+            connection.close.assert_called_once()
+            self.assertEqual(str(output.call_args.args[0]),want)
+
+    def test_development_host_and_staging_exec_routing(self):
+        calls={}
+        offline(rows=[row(project='smokemap-quick-staging',identity='a'*64),
+                      row(project='smokemap-local-staging',identity='b'*64)],calls=calls)
+        calls['host_probe'].assert_has_calls([call('127.0.0.1',3000,'/'),
+            call('127.0.0.1',8000,'/health/ready/')],any_order=True)
+        self.assertCountEqual(calls['exec_probe'].call_args_list,[call('a'*64,False),call('b'*64,False)])
 
     def test_curl_policy(self):
         code=(SOURCE/'curl_probe.py').read_text()

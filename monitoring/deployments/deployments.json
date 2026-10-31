@@ -55,7 +55,8 @@
           "decimals": 0,
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "blue"
           },
           "custom": {
             "spanNulls": false,
@@ -140,7 +141,8 @@
           "decimals": 0,
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "blue"
           },
           "custom": {
             "spanNulls": false,
@@ -403,7 +405,8 @@
           "decimals": 0,
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "blue"
           },
           "custom": {
             "spanNulls": false,

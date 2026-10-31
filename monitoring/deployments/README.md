@@ -227,12 +227,57 @@ label uniqueness, rendering, service health or notification delivery.
 
 ## Root-only rollback
 
-Stop/disable only deployment-monitoring.timer/service; remove only their new unit
-files and reload user manager. Remove only owned `deployments.prom` (and its new
-lock file after stopping). Keep `smokemap.prom`, original collector/timer/exporter,
-9708 bind/firewall, 9100, original metrics/rules/routes/dashboards and application
-runtime untouched. Remove just the new rules reference, deployments child route/
-receiver and new dashboard UIDs if desired; validate assembled configs before
-reload. Remove the new keep-prefix only after publication stops. Preserve private
-evidence and subsequent unrelated edits; no Docker pruning, DB writes or service
-repair. Disabling this collector cannot clear the existing Smokemap backup gate.
+Run as the monitoring owner (uid 1000). In a RemoteCommander shell, set the
+user-bus environment before any user-systemd commands:
+
+```sh
+export XDG_RUNTIME_DIR=/run/user/1000
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+```
+
+1. Remove only the deployments rules file reference from the assembled
+   Prometheus configuration (or the owned file from its rules glob). Validate
+   with `promtool check config`, reload, and confirm the deployments rule group
+   is unloaded. Do this before removing metrics so rollback does not trigger
+   collector-missing alerts. Preserve every original rule.
+2. Disable and stop the timer, then explicitly stop the service; stopping the
+   timer alone leaves an in-flight oneshot able to recreate the metrics file:
+
+   ```sh
+   systemctl --user disable --now deployment-monitoring.timer
+   systemctl --user stop deployment-monitoring.service
+   ```
+
+   The service is a static oneshot with no enablement target. If it was enabled
+   through a separately added link, disable that owned link too.
+3. Wait for the stop to finish. Prove both units are inactive, the service has
+   `MainPID=0` and an empty control group (no collector or helper process), and
+   no manual collector remains. Inspect only process identity, never argv or
+   environment. Check the private writer lock is free:
+
+   ```sh
+   systemctl --user show deployment-monitoring.timer deployment-monitoring.service \
+     --property=ActiveState --property=SubState --property=MainPID --property=ControlGroup
+   flock --exclusive --nonblock "$HOME/.local/state/smokemap-monitoring/metrics/.deployments.lock" true
+   ```
+
+   Continue only when neither unit is active/activating/deactivating, no metrics
+   writer exists and the lock check succeeds. A failed check means wait or
+   investigate; do not remove the lock to bypass an active writer.
+4. Only then remove the owned metric and lock files:
+
+   ```sh
+   rm -- "$HOME/.local/state/smokemap-monitoring/metrics/deployments.prom" \
+     "$HOME/.local/state/smokemap-monitoring/metrics/.deployments.lock"
+   ```
+
+   Remove only the new deployment unit files and reload the user manager.
+5. Optionally remove only the deployments child route/receiver and the two new
+   dashboard UIDs; validate assembled configs before reload. Remove the new
+   `deployment_.*` keep-prefix last, after publication has stopped.
+
+Keep `smokemap.prom`, the original collector/timer/exporter, 9708 bind/firewall,
+9100, original metrics/rules/routes/dashboards and application runtime untouched.
+Preserve private evidence and subsequent unrelated edits; no Docker pruning, DB
+writes or service repair. Disabling this collector cannot clear the existing
+Smokemap backup gate.

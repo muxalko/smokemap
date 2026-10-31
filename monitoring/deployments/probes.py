@@ -21,7 +21,7 @@ PYTHON = """import http.client,signal,sys
 signal.signal(signal.SIGALRM,lambda *_:sys.exit(1));signal.alarm(3)
 try:
  c=http.client.HTTPConnection('127.0.0.1',8000,timeout=2.5)
- c.request('GET','/health/ready/');r=c.getresponse();print(int(r.status==200));c.close()
+ c.request('GET','/health/ready/',headers={'Host':'api.smokemap-staging.internal','X-Forwarded-Proto':'https'});r=c.getresponse();print(int(r.status==200));c.close()
 except (OSError,http.client.HTTPException): print(0)
 """
 

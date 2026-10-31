@@ -29,14 +29,22 @@ def semantics():
     rules=ROOT/'rules.yml'
     j='job="smokemap-monitoring",host="jenkins",instance="fixture"'
     g=j+',application="web_checker",environment="production",deployment="production"'
-    targets=[normalize(t['expr']) for p in BOARDS['web-checker.json']['panels'] for t in p.get('targets',[]) if 'deployment_repeated_failure_jobs' in t['expr']]
+    targets=[normalize(t['expr']) for p in BOARDS['web-checker.json']['panels'] for t in p.get('targets',[]) if 'deployment_repeated_failure_jobs' in t['expr'] or p['id']==18]
     tests=[]
     for name,collector,up,error,observation,signalstamp,want in [('fresh',600,1,0,1,600,1),('stale',1,1,0,1,600,None),('future',601,1,0,1,600,None),('down',600,0,0,1,600,None),('textfile',600,1,1,1,600,None),('failed read',600,1,0,0,600,None),('future signal',600,1,0,1,601,None),('missing signal',600,1,0,1,None,None)]:
         series={f'up{{{j}}}':up,f'node_textfile_scrape_error{{{j}}}':error,f'deployment_collector_timestamp_seconds{{{j}}}':collector,
             f'deployment_signal_observation_success{{{g},signal="worker_status"}}':observation,
-            f'deployment_repeated_failure_jobs{{{g}}}':6}
+            f'deployment_repeated_failure_jobs{{{g}}}':6,
+            f'deployment_overdue_jobs{{{g}}}':0,
+            f'deployment_notification_failed_pending{{{g}}}':2}
         if signalstamp is not None:series[f'deployment_signal_timestamp_seconds{{{g},signal="worker_status"}}']=signalstamp
         tests.append(dict(name=name,interval='30s',input_series=[dict(series=k,values=f'{v}x20') for k,v in series.items()],promql_expr_test=[dict(expr=f'count({q})',eval_time='10m',exp_samples=[] if want is None else [{'labels':'{}','value':want}]) for q in targets]))
+    history=next(p for p in BOARDS['web-checker.json']['panels'] if p['id']==18)
+    for test in tests:
+        visible=test['name']=='fresh'
+        for target,metric,value in zip(history['targets'],('overdue_jobs','repeated_failure_jobs','notification_failed_pending'),(0,6,2)):
+            test['promql_expr_test'].append(dict(expr=normalize(target['expr']),eval_time='10m',
+                exp_samples=[dict(labels='deployment_'+metric+'{'+g+'}',value=value)] if visible else []))
     # Source test path is absolute for CLI artifacts created in RUNNER_TEMP.
     return dict(rule_files=[str(rules)],evaluation_interval='30s',tests=tests)
 
@@ -79,7 +87,25 @@ class DashboardTests(unittest.TestCase):
         self.assertIn('on-host',source.lower())
         self.assertIn('bind-mounted',source)
         self.assertIn('max(3',source)
-        self.assertEqual(len(export()['groups'][0]['rules']),32)
+        self.assertEqual(len(export()['groups'][0]['rules']),34)
+
+    def test_simultaneous_history_targets(self):
+        panel=next(p for p in BOARDS['web-checker.json']['panels'] if p['id']==18)
+        self.assertEqual([t['refId'] for t in panel['targets']],list('ABC'))
+        for target,metric,legend in zip(panel['targets'],('overdue_jobs','repeated_failure_jobs','notification_failed_pending'),
+                ('Overdue jobs','Repeated failure jobs','Failed pending deliveries')):
+            self.assertTrue(target['expr'].startswith('deployment_'+metric+'{'))
+            self.assertNotIn(' or ',target['expr'])
+            self.assertEqual(target['legendFormat'],legend)
+        fresh=semantics()['tests'][0]
+        for metric in ('overdue_jobs','repeated_failure_jobs','notification_failed_pending'):
+            self.assertTrue(any(x['series'].startswith('deployment_'+metric+'{') for x in fresh['input_series']))
+        self.assertEqual(len(fresh['promql_expr_test'][-3:]),3)
+
+    def test_information_cards_are_blue(self):
+        for panel in BOARDS['deployments.json']['panels']:
+            if panel['id'] in (2,3,6):
+                self.assertEqual(panel['fieldConfig']['defaults']['color'],{'mode':'fixed','fixedColor':'blue'})
 
     def test_rules_cover_contract(self):
         rules=json.loads((ROOT/'rules.yml').read_text())['groups'][0]['rules']
