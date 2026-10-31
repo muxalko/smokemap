@@ -1,0 +1,8 @@
+[Unit]
+Description=Private Smokemap monitoring one-shot collector
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 %h/.local/lib/smokemap-monitoring/collector.py --config %h/.config/smokemap-monitoring/config.json --output %h/.local/state/smokemap-monitoring/metrics/smokemap.prom
+TimeoutStartSec=150
+NoNewPrivileges=true

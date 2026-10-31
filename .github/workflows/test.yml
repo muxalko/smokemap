@@ -17,6 +17,13 @@ jobs:
         with:
           submodules: recursive
       - run: git submodule status
+      - run: python3 -m unittest discover -s tests -p test_monitoring.py
+      - name: Validate monitoring alert rules
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y prometheus
+          promtool check rules monitoring/prometheus/rules.yml
+          promtool test rules monitoring/prometheus/rules.test.yml
       - run: make test-dev-cleanup
       - run: make test-dev-cleanup-alert
       - run: make check-compose

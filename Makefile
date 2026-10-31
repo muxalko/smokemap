@@ -219,3 +219,8 @@ test-dev-cleanup-compose:
 .PHONY: test-dev-cleanup-alert
 test-dev-cleanup-alert:
 	python3 -m unittest discover -s tests -p 'test_dev_cleanup_alert.py' -v
+
+# Source-only monitoring tests: mock network/commands; synthetic read-only DB.
+.PHONY: test-monitoring
+test-monitoring:
+	python3 -m unittest discover -s tests -p 'test_monitoring.py' -v
