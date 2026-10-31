@@ -61,6 +61,7 @@ jobs:
             > "$RUNNER_TEMP/quick-help.txt"
           grep -- '--loglevel' "$RUNNER_TEMP/quick-help.txt"
           grep -- '--metrics' "$RUNNER_TEMP/quick-help.txt"
+          python3 tests/check_monitoring_docker.py "$image"
       - name: Verify fresh staging PostGIS visibility and GIS DDL
         run: make test-staging-postgis
       - name: Verify cleanup wait compatibility with Compose 2.35.1
