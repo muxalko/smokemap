@@ -6,7 +6,7 @@ from common import command, number, timestamp
 # No environment, commands, arbitrary label maps, health logs or full inspect.
 FORMAT = ('[{{json .Id}},{{json .Name}},{{json (index .Config.Labels "com.docker.compose.project")}},'
           '{{json (index .Config.Labels "com.docker.compose.service")}},{{json .State.Running}},'
-          '{{if .State.Health}}{{json .State.Health.Status}}{{else}}"none"{{end}},'
+          '{{with (index .State "Health")}}{{json .Status}}{{else}}"none"{{end}},'
           '{{json .RestartCount}},{{json .Image}},'
           '{{json (index .Config.Labels "org.opencontainers.image.revision")}},'
           '{{json .Created}},{{json .State.StartedAt}}]')
