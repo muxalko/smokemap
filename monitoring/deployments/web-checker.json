@@ -1,0 +1,1590 @@
+{
+  "uid": "web-checker-production",
+  "title": "Web-checker production",
+  "schemaVersion": 40,
+  "version": 1,
+  "tags": [
+    "deployments",
+    "jenkins"
+  ],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "editable": true,
+  "panels": [
+    {
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "### Web-checker production\nRead-only aggregates. Terminal attempt includes success or failure; overdue follows each schedule. Provider failures can warn while the worker stays healthy."
+      },
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      }
+    },
+    {
+      "title": "Checker container / liveness",
+      "type": "stat",
+      "description": "Docker running/health only. Schedule-aware overdue is the worker-progress signal below; no providers are called.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_service_state{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",service=\"checker\"}",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "MISSING / STOPPED",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "UNHEALTHY / STARTING",
+                  "color": "red",
+                  "index": 1
+                },
+                "2": {
+                  "text": "RUNNING \u00b7 NO CHECK",
+                  "color": "blue",
+                  "index": 2
+                },
+                "3": {
+                  "text": "HEALTHY",
+                  "color": "green",
+                  "index": 3
+                },
+                "4": {
+                  "text": "UNKNOWN",
+                  "color": "gray",
+                  "index": 4
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Scheduled jobs",
+      "type": "stat",
+      "description": "Enabled jobs with schedules only. Current expected operational baseline: 7; zero triggers a warning.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_scheduled_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 3,
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Overdue jobs",
+      "type": "stat",
+      "description": "Missing terminal attempts or age > max(3 \u00d7 interval, 600) + 300 seconds. Production alert is critical.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_overdue_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Missing job status",
+      "type": "stat",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_missing_status_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 5,
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Repeated provider failures",
+      "type": "stat",
+      "description": "Consecutive failures \u22653. Warning is meaningful even when Docker health is green.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_repeated_failure_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 6,
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Oldest terminal attempt",
+      "type": "stat",
+      "description": "Oldest max(last success, last failure) across scheduled jobs. Missing attempts are not represented as zero age.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_oldest_terminal_attempt_age_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 7,
+      "gridPos": {
+        "x": 6,
+        "y": 7,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Pending notifications",
+      "type": "stat",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_notification_pending{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 8,
+      "gridPos": {
+        "x": 12,
+        "y": 7,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Failed pending deliveries",
+      "type": "stat",
+      "description": "Undelivered notifications with attempts >0.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_notification_failed_pending{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 9,
+      "gridPos": {
+        "x": 18,
+        "y": 7,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Operational alerts pending",
+      "type": "stat",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_operational_pending{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Oldest pending delivery",
+      "type": "stat",
+      "description": "Combined notification and operational queues; zero only for a valid observed empty queue.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_oldest_pending_age_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 6,
+        "y": 11,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Database file size",
+      "type": "stat",
+      "description": "Main SQLite file size. No content or job identifiers exported.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_database_bytes{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Maintenance completion age",
+      "type": "stat",
+      "description": "Actual anchored completed log event, distinct from earlier backup manifest. NO EVIDENCE if absent; warns after 36h.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((time()-deployment_maintenance_last_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"}) and (deployment_maintenance_last_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} > 0) and (deployment_maintenance_last_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} <= time())) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 129600
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 18,
+        "y": 11,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Failures since completion",
+      "type": "stat",
+      "description": "Failed log events strictly after latest completed event; absent completion remains UNKNOWN.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_maintenance_failures_after_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"maintenance_log\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 14,
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "On-host backup presence / validity",
+      "type": "stat",
+      "description": "Bounded manifest and matching regular file size. Created by online backup + integrity_check. No off-host or restored-product proof; Smokemap backup gate remains OPEN.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_backup_manifest_valid{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "MISSING / INVALID",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "VALID ON-HOST",
+                  "color": "blue"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 15,
+      "gridPos": {
+        "x": 6,
+        "y": 15,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "On-host backup age",
+      "type": "stat",
+      "description": "Nonfuture positive completed timestamp; missing/invalid evidence is UNKNOWN, never an epoch spike. Warn >36h.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "((time()-deployment_backup_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"}) and (deployment_backup_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} > 0) and (deployment_backup_completed_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} <= time())) and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 129600
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 16,
+      "gridPos": {
+        "x": 12,
+        "y": 15,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "On-host backup size",
+      "type": "stat",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_backup_bytes{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"backup\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{deployment}} / {{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 2,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 17,
+      "gridPos": {
+        "x": 18,
+        "y": 15,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "title": "Schedule / delivery history",
+      "type": "timeseries",
+      "description": "Fresh collector and per-signal read gates apply at every history step. No rate/increase on these rolling gauges.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "deployment_overdue_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1) or deployment_repeated_failure_jobs{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1) or deployment_notification_failed_pending{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\"} and on(job,instance,application,environment,deployment) (deployment_signal_observation_success{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} == 1) and on(job,instance,application,environment,deployment) ((deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} > time()-180) and (deployment_signal_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",application=\"web_checker\",environment=\"production\",deployment=\"production\",signal=\"worker_status\"} <= time())) and on(job,instance) (deployment_collector_fresh == 1)",
+          "instant": false,
+          "range": true,
+          "format": "time_series",
+          "legendFormat": "{{__name__}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "spanNulls": false,
+        "insertNulls": false
+      },
+      "id": 18,
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 24,
+        "h": 8
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 2,
+        "current": {
+          "text": "Prometheus",
+          "value": "PBFA97CFB590B2093"
+        },
+        "options": []
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Deployments",
+      "url": "/d/jenkins-deployments",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Web checker",
+      "url": "/d/web-checker-production",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Original overview",
+      "url": "/d/smokemap-monitoring",
+      "type": "link",
+      "keepTime": true,
+      "includeVars": true
+    }
+  ]
+}

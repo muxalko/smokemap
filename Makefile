@@ -224,3 +224,18 @@ test-dev-cleanup-alert:
 .PHONY: test-monitoring
 test-monitoring:
 	python3 -m unittest discover -s tests -p 'test_monitoring*.py' -v
+
+# Additive deployment source gates; no Docker, network, credentials or live DB.
+.PHONY: test-deployment-monitoring check-deployment-promql
+test-deployment-monitoring:
+	python3 -m unittest discover -s tests -p 'test_monitoring_deploy*.py' -v
+
+check-deployment-promql:
+	promtool check rules monitoring/deployments/rules.yml
+	promtool test rules monitoring/deployments/rules.test.yml
+	@set -eu; queries=$$(mktemp); semantics=$$(mktemp); \
+	trap 'rm -f "$$queries" "$$semantics"' EXIT; \
+	python3 tests/test_monitoring_deployment_dashboards.py --promql > "$$queries"; \
+	promtool check rules "$$queries"; \
+	python3 tests/test_monitoring_deployment_dashboards.py --promql-tests > "$$semantics"; \
+	promtool test rules "$$semantics"

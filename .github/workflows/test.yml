@@ -28,6 +28,12 @@ jobs:
           promtool test rules "$RUNNER_TEMP/dashboard-semantics.json"
           promtool check rules monitoring/prometheus/rules.yml
           promtool test rules monitoring/prometheus/rules.test.yml
+          promtool check rules monitoring/deployments/rules.yml
+          promtool test rules monitoring/deployments/rules.test.yml
+          python3 tests/test_monitoring_deployment_dashboards.py --promql > "$RUNNER_TEMP/deployment-dashboard-queries.json"
+          promtool check rules "$RUNNER_TEMP/deployment-dashboard-queries.json"
+          python3 tests/test_monitoring_deployment_dashboards.py --promql-tests > "$RUNNER_TEMP/deployment-dashboard-semantics.json"
+          promtool test rules "$RUNNER_TEMP/deployment-dashboard-semantics.json"
       - run: make test-dev-cleanup
       - run: make test-dev-cleanup-alert
       - run: make check-compose

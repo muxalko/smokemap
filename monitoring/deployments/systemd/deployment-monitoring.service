@@ -1,0 +1,13 @@
+[Unit]
+Description=Bounded deployment monitoring textfile pass
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.local/lib/deployment-monitoring/deployments/collector.py --config %h/.config/deployment-monitoring/config.json --output %h/.local/state/smokemap-monitoring/metrics/deployments.prom
+TimeoutStartSec=28
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/state/smokemap-monitoring/metrics

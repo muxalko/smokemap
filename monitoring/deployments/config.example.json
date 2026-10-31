@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "quick_state_path": "/operator-supplied/quick-staging/state.json",
+  "local_ca_path": "/operator-supplied/local-staging/public-ca.crt"
+}

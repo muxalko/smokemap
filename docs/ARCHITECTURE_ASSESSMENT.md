@@ -1,5 +1,12 @@
 # Smokemap Joint Architecture and Engineering Assessment
 
+Deployment monitoring source follow-up (root #144):
+[Deployment runbook](../monitoring/deployments/README.md) adds a separate fixed
+20-service collector, read-only web-checker aggregates, scoped rules and two
+native dashboards. It does not install services, validate live availability,
+prove restore/off-host backup, close the Smokemap backup gate or alter existing
+monitoring. Root owns required CI, independent review, installation and live QA.
+
 Monitoring source follow-up (root #138): [HCP/Smokemap monitoring](../monitoring/README.md)
 adds private textfile collection, explicit backup evidence and freshness/absence
 alerts. Telegram remains primary; email remains optional and the existing cleanup
