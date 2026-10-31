@@ -25,7 +25,7 @@ Artifacts:
   Telegram primary, optional secondary email, acceptance gates and rollback.
 - `tests/test_monitoring.py`, Makefile target, integration CI monitoring gates.
 
-Local verification: 17 monitoring tests, 43 cleanup-email tests and 21 existing
+Local verification: 18 monitoring tests, 43 cleanup-email tests and 21 existing
 cleanup-supervisor tests pass; Python compilation, dashboard ID/JSON validation
 and whitespace checks pass. Local promtool is unavailable; CI runs the actual
 29-rule/46-scenario Prometheus evaluation.

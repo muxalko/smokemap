@@ -94,6 +94,18 @@ class MonitoringTests(unittest.TestCase):
         self.assertIn('source_success{source="hcp_runtime"} 0', result)
         self.assertNotIn('SECRET', result)
 
+    def test_runtime_server_compatibility_flags_and_conflicts(self):
+        nested = {'server': {'status': 'running', 'endpoint_compatible': True,
+                             'private_protocol_compatible': True}}
+        with patch.object(c, 'bounded_command', return_value=json.dumps(nested).encode()):
+            self.assertEqual(c.runtime('/synthetic/checker', 1), {})
+        for bad in [{**nested, 'endpoint_compatible': False},
+                    {'server': {'status': 'running', 'endpoint_compatible': True},
+                     'private_protocol_compatible': True}]:
+            with patch.object(c, 'bounded_command', return_value=json.dumps(bad).encode()):
+                with self.assertRaises(ValueError):
+                    c.runtime('/synthetic/checker', 1)
+
     def test_epoch_precision(self):
         now = 1793444887.123456
         rendered = c.sample('collector_timestamp_seconds', now)

@@ -102,10 +102,17 @@ def bounded_command(arguments, timeout):
 
 def runtime(path, timeout):
     status = json.loads(bounded_command([path, 'herdr-check'], timeout))
-    if (status.get('server', {}).get('status') != 'running'
-            or status.get('endpoint_compatible') is not True
-            or status.get('private_protocol_compatible') is not True):
+    server = status.get('server', {})
+    if not isinstance(server, dict) or server.get('status') != 'running':
         raise ValueError('runtime unavailable')
+    # Installed versions may place compatibility alongside server or inside it.
+    # Require both flags in one object and reject every conflicting declaration.
+    flags = ('endpoint_compatible', 'private_protocol_compatible')
+    locations = (status, server)
+    if (not any(all(location.get(flag) is True for flag in flags) for location in locations)
+            or any(flag in location and location[flag] is not True
+                   for location in locations for flag in flags)):
+        raise ValueError('runtime incompatible')
     return {}
 
 

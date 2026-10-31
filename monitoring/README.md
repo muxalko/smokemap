@@ -39,7 +39,8 @@ in it. The example contains deliberately unusable Docker container placeholders.
   redirects or body reads. HCP API is `/health`; runtime is the configured
   executable with exactly `herdr-check`. Exit 0 must also return bounded JSON with
   `server.status == "running"`, `endpoint_compatible == true` and
-  `private_protocol_compatible == true` (top-level compatibility flags). Stopped,
+  `private_protocol_compatible == true` (both flags at the top level or both in
+  `server`; conflicting declarations anywhere fail). Stopped,
   incompatible or malformed responses fail even at exit 0. At most 64KiB stdout
   is buffered, stderr is discarded, and a deadline kills the process group.
   Output content is never emitted. Docker commands use the same bounded reader.
