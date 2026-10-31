@@ -71,7 +71,7 @@
       "pluginVersion": "11.3.1",
       "options": {
         "mode": "markdown",
-        "content": "## Operations / HCP\nRuntime availability, scheduler backlog and lease pressure. **Blocked / approval waits are informational** and include blocked tasks, not exclusively human approvals."
+        "content": "## Operations / HCP\nRuntime, queue and lease health. Blocked and approval waits are informational."
       }
     },
     {
@@ -329,7 +329,7 @@
     },
     {
       "id": 5,
-      "title": "Oldest queued task",
+      "title": "Oldest queued",
       "type": "stat",
       "gridPos": {
         "x": 12,
@@ -483,7 +483,7 @@
     },
     {
       "id": 7,
-      "title": "Failures \u00b7 rolling 1h",
+      "title": "Failures \u00b7 1h",
       "type": "stat",
       "gridPos": {
         "x": 20,
@@ -597,7 +597,7 @@
           "unit": "short",
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "thresholds": {
             "mode": "absolute",
@@ -617,7 +617,7 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "FAILED",
+                  "text": "UNHEALTHY",
                   "color": "red"
                 },
                 "1": {
@@ -897,7 +897,9 @@
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "line"
-            }
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 1
           }
         },
         "overrides": []

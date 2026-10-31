@@ -27,7 +27,10 @@ collector age between 0 and 180 seconds, and a readable textfile. Joins use
 a successful source read. Docker state requires a configured healthcheck and
 combines running with health. Unsupported/missing health is **UNKNOWN**; failed
 health is red. Stat queries are instant and use the last value, avoiding a
-previous non-null healthy sample. Timelines expose 0/1 and preserve null gaps.
+previous non-null healthy sample. Timelines map 0 to red UNHEALTHY and 1 to green HEALTHY, with UNKNOWN for nulls.
+The classic palette enables native value-mapping legend labels instead of threshold
+brackets ([Grafana legend options](https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/visualizations/state-timeline/#legend-options)).
+Timelines preserve null gaps.
 No fixed disconnect threshold is used, so valid 2m/5m query steps at longer
 ranges stay connected while actual nulls remain unbridged. Source-age trends
 require successful reads and positive, non-future timestamps; invalid observations
@@ -53,7 +56,10 @@ Never create synthetic backup evidence. Collector age warns at 180s, queue age a
 free. Root and data mounts are shown individually. CPU uses counter rate;
 restart history uses per-service 10m counter increases, while the headline shows
 an aggregate 1h increase requiring all five services. The data-volume bytes trend
-shows shared host storage. One-hour failures remain a rolling gauge.
+shows shared host storage with two decimal places for distinguishable byte ticks.
+Restart increments, Docker inspection failures and expired-lease trends use soft
+0–1 axis limits so zero counts remain readable while larger counts can expand
+the scale. One-hour failures remain a rolling gauge.
 
 Blocked / approval waits include blocked tasks and are blue informational values,
 not a count exclusively of human approvals. No active worker, capacity, completed

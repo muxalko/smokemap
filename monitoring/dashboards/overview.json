@@ -71,12 +71,12 @@
       "pluginVersion": "11.3.1",
       "options": {
         "mode": "markdown",
-        "content": "## Operations / Overview\nSmokemap development \u00b7 HCP operations \u00b7 Jenkins host. Start with readiness, then follow a signal into the dedicated dashboard. **Unknown is not healthy.**"
+        "content": "## Operations / Overview\nService health, host capacity and recovery readiness. Missing telemetry is UNKNOWN."
       }
     },
     {
       "id": 2,
-      "title": "Smokemap availability",
+      "title": "Smokemap",
       "type": "stat",
       "gridPos": {
         "x": 0,
@@ -166,7 +166,7 @@
     },
     {
       "id": 3,
-      "title": "HCP availability",
+      "title": "HCP",
       "type": "stat",
       "gridPos": {
         "x": 4,
@@ -256,7 +256,7 @@
     },
     {
       "id": 4,
-      "title": "Healthy services / 5",
+      "title": "Services / 5",
       "type": "stat",
       "gridPos": {
         "x": 8,
@@ -333,7 +333,7 @@
     },
     {
       "id": 5,
-      "title": "Collector freshness",
+      "title": "Collector age",
       "type": "stat",
       "gridPos": {
         "x": 12,
@@ -810,7 +810,7 @@
           "unit": "short",
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "thresholds": {
             "mode": "absolute",
@@ -830,7 +830,7 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "FAILED",
+                  "text": "UNHEALTHY",
                   "color": "red"
                 },
                 "1": {
