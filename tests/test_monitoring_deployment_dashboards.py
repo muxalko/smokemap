@@ -29,14 +29,15 @@ def semantics():
     rules=ROOT/'rules.yml'
     j='job="smokemap-monitoring",host="jenkins",instance="fixture"'
     g=j+',application="web_checker",environment="production",deployment="production"'
-    targets=[normalize(t['expr']) for p in BOARDS['web-checker.json']['panels'] for t in p.get('targets',[]) if 'deployment_repeated_failure_jobs' in t['expr'] or p['id']==18]
+    targets=[normalize(t['expr']) for p in BOARDS['web-checker.json']['panels'] for t in p.get('targets',[]) if 'deployment_repeated_failure_jobs' in t['expr'] or p['id'] in (7,18)]
     tests=[]
     for name,collector,up,error,observation,signalstamp,want in [('fresh',600,1,0,1,600,1),('stale',1,1,0,1,600,None),('future',601,1,0,1,600,None),('down',600,0,0,1,600,None),('textfile',600,1,1,1,600,None),('failed read',600,1,0,0,600,None),('future signal',600,1,0,1,601,None),('missing signal',600,1,0,1,None,None)]:
         series={f'up{{{j}}}':up,f'node_textfile_scrape_error{{{j}}}':error,f'deployment_collector_timestamp_seconds{{{j}}}':collector,
             f'deployment_signal_observation_success{{{g},signal="worker_status"}}':observation,
             f'deployment_repeated_failure_jobs{{{g}}}':6,
             f'deployment_overdue_jobs{{{g}}}':0,
-            f'deployment_notification_failed_pending{{{g}}}':2}
+            f'deployment_notification_failed_pending{{{g}}}':2,
+            f'deployment_oldest_terminal_attempt_age_seconds{{{g}}}':1224}
         if signalstamp is not None:series[f'deployment_signal_timestamp_seconds{{{g},signal="worker_status"}}']=signalstamp
         tests.append(dict(name=name,interval='30s',input_series=[dict(series=k,values=f'{v}x20') for k,v in series.items()],promql_expr_test=[dict(expr=f'count({q})',eval_time='10m',exp_samples=[] if want is None else [{'labels':'{}','value':want}]) for q in targets]))
     history=next(p for p in BOARDS['web-checker.json']['panels'] if p['id']==18)
@@ -103,8 +104,8 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(len(fresh['promql_expr_test'][-3:]),3)
 
     def test_information_cards_are_blue(self):
-        for panel in BOARDS['deployments.json']['panels']:
-            if panel['id'] in (2,3,6):
+        for board,ids in [('deployments.json',(2,3,6)),('web-checker.json',(7,))]:
+            for panel in [p for p in BOARDS[board]['panels'] if p['id'] in ids]:
                 self.assertEqual(panel['fieldConfig']['defaults']['color'],{'mode':'fixed','fixedColor':'blue'})
 
     def test_rules_cover_contract(self):

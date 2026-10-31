@@ -76,7 +76,7 @@
                   "index": 1
                 },
                 "2": {
-                  "text": "RUNNING \u00b7 NO CHECK",
+                  "text": "RUNNING · NO CHECK",
                   "color": "blue",
                   "index": 2
                 },
@@ -237,7 +237,7 @@
     {
       "title": "Overdue jobs",
       "type": "stat",
-      "description": "Missing terminal attempts or age > max(3 \u00d7 interval, 600) + 300 seconds. Production alert is critical.",
+      "description": "Missing terminal attempts or age > max(3 × interval, 600) + 300 seconds. Production alert is critical.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -415,7 +415,7 @@
     {
       "title": "Repeated provider failures",
       "type": "stat",
-      "description": "Consecutive failures \u22653. Warning is meaningful even when Docker health is green.",
+      "description": "Consecutive failures ≥3. Warning is meaningful even when Docker health is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -504,7 +504,7 @@
     {
       "title": "Oldest terminal attempt",
       "type": "stat",
-      "description": "Oldest max(last success, last failure) across scheduled jobs. Missing attempts are not represented as zero age.",
+      "description": "Oldest max(last success, last failure) across scheduled jobs. Informational age: job intervals differ, so use the schedule-aware Overdue jobs card to assess timeliness. Missing attempts are not represented as zero age.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -526,7 +526,8 @@
           "decimals": 2,
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "blue"
           },
           "custom": {
             "spanNulls": false,
@@ -550,10 +551,6 @@
               {
                 "color": "blue",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 900
               }
             ]
           }
