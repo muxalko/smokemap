@@ -1,0 +1,1443 @@
+{
+  "rule_files": [
+    "rules.yml"
+  ],
+  "evaluation_interval": "30s",
+  "tests": [
+    {
+      "name": "MonitoringCollectorAbsent",
+      "interval": "30s",
+      "input_series": [],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringCollectorAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringCollectorAbsent",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringCollectorAbsent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringCollectorStale",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringCollectorStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringCollectorStale",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringCollectorStale"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringExporterDown",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "up{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringExporterDown",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringExporterDown",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringExporterDown"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringTextfileError",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "node_textfile_scrape_error{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringTextfileError",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringTextfileError",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringTextfileError"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringSourceFailure",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringSourceFailure",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringSourceFailure",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringSourceFailure"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringSourceStale",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringSourceStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringSourceStale",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringSourceStale"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringSourceAbsent",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringSourceAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringSourceAbsent",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringSourceAbsent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MonitoringSourceTimestampAbsent",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "MonitoringSourceTimestampAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "MonitoringSourceTimestampAbsent",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringSourceTimestampAbsent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SmokemapContainerDown",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "SmokemapContainerDown",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "SmokemapContainerDown",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "SmokemapContainerDown"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SmokemapContainerRestarting",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+1x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "SmokemapContainerRestarting",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "SmokemapContainerRestarting",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "SmokemapContainerRestarting"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HCPExpiredLeases",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "HCPExpiredLeases",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPExpiredLeases",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "HCPExpiredLeases"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HCPQueueOld",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1801+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "HCPQueueOld",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPQueueOld",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "HCPQueueOld"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HCPFailures",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "HCPFailures",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPFailures",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "HCPFailures"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HCPUnknownStatus",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "HCPUnknownStatus",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPUnknownStatus",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "HCPUnknownStatus"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BackupEvidenceMissing",
+      "interval": "30s",
+      "input_series": [],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "BackupEvidenceMissing",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "BackupEvidenceMissing",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "BackupEvidenceMissing"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BackupEvidenceStale",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x3000"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "2m",
+          "alertname": "BackupEvidenceStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "25h",
+          "alertname": "BackupEvidenceStale",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "severity": "warning",
+                "instance": "fixture"
+              },
+              "exp_annotations": {
+                "summary": "BackupEvidenceStale"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "expected approval waits do not alert",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "smokemap_hcp_approval_waits{job=\"smokemap-monitoring\"}",
+          "values": "100+0x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "8m",
+          "alertname": "HCPExpiredLeases",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPQueueOld",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPFailures",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "8m",
+          "alertname": "HCPUnknownStatus",
+          "exp_alerts": []
+        }
+      ]
+    },
+    {
+      "name": "configured sources missing",
+      "interval": "30s",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringConfiguredSourceAbsent",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_api",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_runtime",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_db",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_storage",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_media_cleanup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "backup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "MonitoringConfiguredSourceAbsent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "container_running absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_container_running",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_db",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_storage",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_media_cleanup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "container_health absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_container_health",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_db",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_storage",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_media_cleanup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "container_health_configured absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_container_health_configured",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_db",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_storage",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_media_cleanup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "container_restarts_total absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_container_restarts_total",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_frontend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_backend",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_db",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_storage",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            },
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "dev_media_cleanup",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_queue_count absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_queue_count",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_queue_oldest_age_seconds absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_queue_oldest_age_seconds",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_expired_leases absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_expired_leases",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_failures_last_hour absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_failures_last_hour",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_approval_waits absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_approval_waits",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hcp_unknown_status_count absent",
+      "alert_rule_test": [
+        {
+          "eval_time": "4m",
+          "alertname": "MonitoringMetricAbsent_hcp_unknown_status_count",
+          "exp_alerts": [
+            {
+              "exp_labels": {
+                "job": "smokemap-monitoring",
+                "source": "hcp_queue",
+                "severity": "warning"
+              },
+              "exp_annotations": {
+                "summary": "Required aggregate metric absent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "healthy sources and approval waits stay quiet",
+      "interval": "30s",
+      "input_series": [
+        {
+          "series": "up{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "node_textfile_scrape_error{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backup\"}",
+          "values": "1+30x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_api\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_api\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_api\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"frontend\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backend\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_runtime\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_runtime\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_runtime\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_hcp_queue_count{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_hcp_approval_waits{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"hcp_queue\"}",
+          "values": "999+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health_configured{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_frontend\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health_configured{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_backend\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health_configured{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_db\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health_configured{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_storage\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "0+30x40"
+        },
+        {
+          "series": "smokemap_container_running{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_health_configured{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_container_restarts_total{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"dev_media_cleanup\"}",
+          "values": "0+0x40"
+        },
+        {
+          "series": "smokemap_source_expected{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_success{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backup\"}",
+          "values": "1+0x40"
+        },
+        {
+          "series": "smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",instance=\"fixture\",source=\"backup\"}",
+          "values": "0+30x40"
+        }
+      ],
+      "alert_rule_test": [
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringCollectorAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringCollectorStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringExporterDown",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringTextfileError",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringSourceFailure",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringSourceStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringSourceAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringSourceTimestampAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "SmokemapContainerDown",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "SmokemapContainerRestarting",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "HCPExpiredLeases",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "HCPQueueOld",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "HCPFailures",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "HCPUnknownStatus",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "BackupEvidenceMissing",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "BackupEvidenceStale",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringConfiguredSourceAbsent",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_container_running",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_container_health",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_container_health_configured",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_container_restarts_total",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_queue_count",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_queue_oldest_age_seconds",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_expired_leases",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_failures_last_hour",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_approval_waits",
+          "exp_alerts": []
+        },
+        {
+          "eval_time": "18m",
+          "alertname": "MonitoringMetricAbsent_hcp_unknown_status_count",
+          "exp_alerts": []
+        }
+      ]
+    }
+  ]
+}

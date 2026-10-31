@@ -1,0 +1,307 @@
+{
+  "groups": [
+    {
+      "name": "smokemap-monitoring",
+      "interval": "30s",
+      "rules": [
+        {
+          "alert": "MonitoringCollectorAbsent",
+          "expr": "absent(smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringCollectorAbsent"
+          }
+        },
+        {
+          "alert": "MonitoringCollectorStale",
+          "expr": "time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\"} > 180",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringCollectorStale"
+          }
+        },
+        {
+          "alert": "MonitoringExporterDown",
+          "expr": "up{job=\"smokemap-monitoring\"} == 0 or absent(up{job=\"smokemap-monitoring\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringExporterDown"
+          }
+        },
+        {
+          "alert": "MonitoringTextfileError",
+          "expr": "node_textfile_scrape_error{job=\"smokemap-monitoring\"} != 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringTextfileError"
+          }
+        },
+        {
+          "alert": "MonitoringSourceFailure",
+          "expr": "smokemap_source_success{job=\"smokemap-monitoring\",source!=\"backup\"} == 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringSourceFailure"
+          }
+        },
+        {
+          "alert": "MonitoringSourceStale",
+          "expr": "time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",source!=\"backup\"} > 180",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringSourceStale"
+          }
+        },
+        {
+          "alert": "MonitoringSourceAbsent",
+          "expr": "smokemap_source_expected{job=\"smokemap-monitoring\"} unless on(job,instance,source) smokemap_source_success{job=\"smokemap-monitoring\"}",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringSourceAbsent"
+          }
+        },
+        {
+          "alert": "MonitoringSourceTimestampAbsent",
+          "expr": "smokemap_source_expected{job=\"smokemap-monitoring\"} unless on(job,instance,source) smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\"}",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringSourceTimestampAbsent"
+          }
+        },
+        {
+          "alert": "SmokemapContainerDown",
+          "expr": "smokemap_container_running{job=\"smokemap-monitoring\"} == 0 or (smokemap_container_health{job=\"smokemap-monitoring\"} == 0 and on(job,instance,source) smokemap_container_health_configured{job=\"smokemap-monitoring\"} == 1)",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "SmokemapContainerDown"
+          }
+        },
+        {
+          "alert": "SmokemapContainerRestarting",
+          "expr": "increase(smokemap_container_restarts_total{job=\"smokemap-monitoring\"}[10m]) > 2",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "SmokemapContainerRestarting"
+          }
+        },
+        {
+          "alert": "HCPExpiredLeases",
+          "expr": "smokemap_hcp_expired_leases{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "HCPExpiredLeases"
+          }
+        },
+        {
+          "alert": "HCPQueueOld",
+          "expr": "smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\"} > 1800",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "HCPQueueOld"
+          }
+        },
+        {
+          "alert": "HCPFailures",
+          "expr": "smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "HCPFailures"
+          }
+        },
+        {
+          "alert": "HCPUnknownStatus",
+          "expr": "smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\"} > 0",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "HCPUnknownStatus"
+          }
+        },
+        {
+          "alert": "BackupEvidenceMissing",
+          "expr": "absent(smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\"})",
+          "for": "15m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "BackupEvidenceMissing"
+          }
+        },
+        {
+          "alert": "BackupEvidenceStale",
+          "expr": "time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\"} > 86400",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "BackupEvidenceStale"
+          }
+        },
+        {
+          "alert": "MonitoringConfiguredSourceAbsent",
+          "expr": "absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_api\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"frontend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"backend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_runtime\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"hcp_queue\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"}) or absent(smokemap_source_expected{job=\"smokemap-monitoring\",source=\"backup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "MonitoringConfiguredSourceAbsent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_running",
+          "expr": "absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_running{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_health",
+          "expr": "absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_health{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_health_configured",
+          "expr": "absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_health_configured{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_container_restarts_total",
+          "expr": "absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_frontend\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_backend\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_db\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_storage\"}) or absent(smokemap_container_restarts_total{job=\"smokemap-monitoring\",source=\"dev_media_cleanup\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_queue_count",
+          "expr": "absent(smokemap_hcp_queue_count{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_queue_oldest_age_seconds",
+          "expr": "absent(smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_expired_leases",
+          "expr": "absent(smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_failures_last_hour",
+          "expr": "absent(smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_approval_waits",
+          "expr": "absent(smokemap_hcp_approval_waits{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        },
+        {
+          "alert": "MonitoringMetricAbsent_hcp_unknown_status_count",
+          "expr": "absent(smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\",source=\"hcp_queue\"})",
+          "for": "3m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "Required aggregate metric absent"
+          }
+        }
+      ]
+    }
+  ]
+}

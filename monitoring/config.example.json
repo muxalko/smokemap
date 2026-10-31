@@ -1,0 +1,60 @@
+{
+  "timeout_seconds": 5,
+  "sources": [
+    {
+      "name": "hcp_api",
+      "kind": "http",
+      "url": "http://127.0.0.1:8787/health"
+    },
+    {
+      "name": "frontend",
+      "kind": "http",
+      "url": "http://127.0.0.1:3000/"
+    },
+    {
+      "name": "backend",
+      "kind": "http",
+      "url": "http://127.0.0.1:8000/health/ready/"
+    },
+    {
+      "name": "hcp_runtime",
+      "kind": "runtime",
+      "path": "/home/michael/.local/bin/herdr-control"
+    },
+    {
+      "name": "hcp_queue",
+      "kind": "sqlite",
+      "path": "/home/michael/.local/share/herdr-control/control.db"
+    },
+    {
+      "name": "dev_frontend",
+      "kind": "docker",
+      "container": "REPLACE-development-frontend-1"
+    },
+    {
+      "name": "dev_backend",
+      "kind": "docker",
+      "container": "REPLACE-development-backend-1"
+    },
+    {
+      "name": "dev_db",
+      "kind": "docker",
+      "container": "REPLACE-development-db-1"
+    },
+    {
+      "name": "dev_storage",
+      "kind": "docker",
+      "container": "REPLACE-development-storage-1"
+    },
+    {
+      "name": "dev_media_cleanup",
+      "kind": "docker",
+      "container": "REPLACE-development-media-cleanup-1"
+    },
+    {
+      "name": "backup",
+      "kind": "backup",
+      "path": "/home/michael/.local/state/smokemap-monitoring/backup-evidence.json"
+    }
+  ]
+}

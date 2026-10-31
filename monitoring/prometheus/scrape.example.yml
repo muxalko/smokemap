@@ -1,0 +1,7 @@
+# Append this job to the existing scrape_configs, preserving linux/9100.
+# Replace private address only; never bind 9708 to all interfaces.
+job_name: smokemap-monitoring
+scrape_interval: 30s
+scrape_timeout: 10s
+static_configs:
+  - targets: ['192.168.56.5:9708']
