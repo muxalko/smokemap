@@ -1,0 +1,1437 @@
+{
+  "id": null,
+  "uid": "hcp-operations",
+  "title": "HCP \u00b7 Operations",
+  "description": "Operational signals and explicit readiness gaps. Missing observations are unknown.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "tags": [
+    "smokemap",
+    "operations"
+  ],
+  "graphTooltip": 1,
+  "links": [
+    {
+      "title": "Overview",
+      "type": "link",
+      "url": "/d/smokemap-monitoring",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    },
+    {
+      "title": "Smokemap",
+      "type": "link",
+      "url": "/d/smokemap-health",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    },
+    {
+      "title": "HCP",
+      "type": "link",
+      "url": "/d/hcp-operations",
+      "keepTime": true,
+      "includeVars": true,
+      "targetBlank": false
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "refresh": 1,
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "description": "## Operations / HCP\nRuntime availability, scheduler backlog and lease pressure. **Blocked / approval waits are informational** and include blocked tasks, not exclusively human approvals.",
+      "pluginVersion": "11.3.1",
+      "options": {
+        "mode": "markdown",
+        "content": "## Operations / HCP\nRuntime availability, scheduler backlog and lease pressure. **Blocked / approval waits are informational** and include blocked tasks, not exclusively human approvals."
+      }
+    },
+    {
+      "id": 2,
+      "title": "HCP API",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful health read, gated by live exporter and collector freshness.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP API",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 3,
+      "title": "HCP runtime",
+      "type": "stat",
+      "gridPos": {
+        "x": 4,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful health read, gated by live exporter and collector freshness.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP runtime",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 4,
+      "title": "Queued tasks",
+      "type": "stat",
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_queue_count{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Queued tasks",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 5,
+      "title": "Oldest queued task",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Oldest queued task",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1800
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 6,
+      "title": "Expired leases",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Expired leases",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 7,
+      "title": "Failures \u00b7 rolling 1h",
+      "type": "stat",
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 4
+      },
+      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Failures \u00b7 rolling 1h",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 8,
+      "title": "Availability history",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 6
+      },
+      "description": "1 healthy / 0 failed. Gray or gaps mean unknown, stale or unsupported health checks.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP runtime",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FAILED",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "HEALTHY",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "lineWidth": 0,
+            "fillOpacity": 85
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "rowHeight": 0.75,
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Queued tasks \u00b7 trend",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Snapshot gauge; gaps mean no valid observation. Rolling failures are not a counter.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_queue_count{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Queued tasks",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Oldest queued task \u00b7 trend",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Snapshot gauge; gaps mean no valid observation. Rolling failures are not a counter.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_queue_oldest_age_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Oldest queued task",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1800
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Expired leases \u00b7 trend",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Snapshot gauge; gaps mean no valid observation. Rolling failures are not a counter.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_expired_leases{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Expired leases",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Failures \u00b7 rolling 1h \u00b7 trend",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 7
+      },
+      "description": "Snapshot gauge; gaps mean no valid observation. Rolling failures are not a counter.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_failures_last_hour{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Failures \u00b7 rolling 1h",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Blocked / approval waits \u00b7 info",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 8,
+        "h": 4
+      },
+      "description": "INFORMATIONAL: blocked, waiting_approval and awaiting_approval. Not exclusively human approvals; no page threshold.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_approval_waits{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Blocked / approval waits \u00b7 info",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 14,
+      "title": "Blocked / approval waits \u00b7 history",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 27,
+        "w": 16,
+        "h": 6
+      },
+      "description": "INFORMATIONAL, including blocked tasks. No alert threshold.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_approval_waits{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Blocked / approval waits",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Unknown task states",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 8,
+        "h": 4
+      },
+      "description": "Unrecognized status count; schema coverage warning, not worker capacity.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(smokemap_hcp_unknown_status_count{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} and on(job,instance,source) (smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"} == 1)) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Unknown task states",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 16,
+      "title": "Signal freshness",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 33,
+        "w": 16,
+        "h": 6
+      },
+      "description": "Over 180s needs attention. Failed reads have timestamp zero.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_api\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP API",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "B",
+          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_runtime\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "HCP runtime",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        },
+        {
+          "refId": "C",
+          "expr": "(time() - smokemap_source_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"hcp_queue\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "legendFormat": "Queue",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 180
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "showPoints": "never",
+            "spanNulls": false,
+            "insertNulls": 90000,
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "Firing alerts \u00b7 action context",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 16,
+        "h": 6
+      },
+      "description": "Scoped firing alerts only. Empty means no rows; check the Prometheus signal before concluding all clear.",
+      "pluginVersion": "11.3.1",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "ALERTS{monitoring_scope=\"smokemap_hcp\",alertstate=\"firing\",source=~\"hcp_.*|\"}",
+          "legendFormat": "",
+          "editorMode": "code",
+          "range": false,
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "UNKNOWN",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "UNKNOWN",
+                  "color": "gray"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": {
+              "alertname": true,
+              "source": true,
+              "severity": true
+            },
+            "renameByName": {
+              "alertname": "Alert",
+              "source": "Source",
+              "severity": "Severity"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Signal coverage",
+      "type": "text",
+      "gridPos": {
+        "x": 16,
+        "y": 39,
+        "w": 8,
+        "h": 6
+      },
+      "description": "### Interpret the queue\nQueue count and oldest age cover queued / pending tasks. Lease expiry uses a 120s grace. Failures count updates in the last hour.\n\nActive workers, capacity and completed-task throughput are not collected. Empty alert rows are not proof of source freshness.",
+      "pluginVersion": "11.3.1",
+      "options": {
+        "mode": "markdown",
+        "content": "### Interpret the queue\nQueue count and oldest age cover queued / pending tasks. Lease expiry uses a 120s grace. Failures count updates in the last hour.\n\nActive workers, capacity and completed-task throughput are not collected. Empty alert rows are not proof of source freshness."
+      }
+    }
+  ]
+}

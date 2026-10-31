@@ -17,11 +17,13 @@ jobs:
         with:
           submodules: recursive
       - run: git submodule status
-      - run: python3 -m unittest discover -s tests -p test_monitoring.py
-      - name: Validate monitoring alert rules
+      - run: python3 -m unittest discover -s tests -p 'test_monitoring*.py'
+      - name: Validate monitoring rules and dashboard PromQL
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y prometheus
+          python3 tests/test_monitoring_dashboards.py --promql > "$RUNNER_TEMP/dashboard-queries.json"
+          promtool check rules "$RUNNER_TEMP/dashboard-queries.json"
           promtool check rules monitoring/prometheus/rules.yml
           promtool test rules monitoring/prometheus/rules.test.yml
       - run: make test-dev-cleanup

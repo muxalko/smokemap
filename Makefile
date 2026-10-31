@@ -223,4 +223,4 @@ test-dev-cleanup-alert:
 # Source-only monitoring tests: mock network/commands; synthetic read-only DB.
 .PHONY: test-monitoring
 test-monitoring:
-	python3 -m unittest discover -s tests -p 'test_monitoring.py' -v
+	python3 -m unittest discover -s tests -p 'test_monitoring*.py' -v
