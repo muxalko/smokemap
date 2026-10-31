@@ -47,11 +47,12 @@
     "list": [
       {
         "name": "DS_PROMETHEUS",
-        "label": "Prometheus",
+        "label": "Data source",
         "type": "datasource",
         "query": "prometheus",
         "refresh": 1,
-        "options": []
+        "options": [],
+        "hide": 2
       }
     ]
   },
@@ -290,7 +291,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "orange",
+                "color": "red",
                 "value": null
               },
               {
@@ -498,7 +499,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "OPEN until verified backup and restore evidence exists. Inspect backup age in Smokemap.",
+      "description": "READY requires verified backup and restore evidence aged 0\u201324h. Failed reads, old or future evidence are OPEN; missing telemetry stays UNKNOWN.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -507,7 +508,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
+          "expr": "((smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"} == 0) * 1 or ((smokemap_source_success{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"} == 1) * on(job,instance,source) ((time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) <= bool 86400) * on(job,instance,source) ((time() - smokemap_backup_verified_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\",source=\"backup\"}) >= bool 0))) and on(job,instance) (up{job=\"smokemap-monitoring\",host=\"jenkins\"} == 1) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) >= 0) and on(job,instance) ((time() - smokemap_collector_timestamp_seconds{job=\"smokemap-monitoring\",host=\"jenkins\"}) <= 180) and on(job,instance) (node_textfile_scrape_error{job=\"smokemap-monitoring\",host=\"jenkins\"} == 0)",
           "legendFormat": "Backup readiness",
           "editorMode": "code",
           "range": false,
@@ -529,7 +530,7 @@
                 "value": null
               },
               {
-                "color": "blue",
+                "color": "green",
                 "value": 1
               }
             ]
@@ -543,8 +544,8 @@
                   "color": "orange"
                 },
                 "1": {
-                  "text": "EVIDENCE",
-                  "color": "blue"
+                  "text": "READY",
+                  "color": "green"
                 }
               }
             },
@@ -1141,11 +1142,11 @@
         "w": 8,
         "h": 6
       },
-      "description": "### Readiness needs action\n**BackupEvidenceMissing is expected** until a verified pipeline exists.\n\nHealth probes and container state describe availability, not product correctness. Request rate, latency and submission throughput are not collected. Host alerts outside this scope remain in existing dashboards.",
+      "description": "### Recovery readiness\nVerified backup and restore evidence must be no older than 24h. Investigate OPEN readiness or missing evidence using the backup age and scoped alerts.\n\nHealth probes and container state describe availability, not product correctness. Request rate, latency and submission throughput are not collected. Host alerts outside this scope remain in existing dashboards.",
       "pluginVersion": "11.3.1",
       "options": {
         "mode": "markdown",
-        "content": "### Readiness needs action\n**BackupEvidenceMissing is expected** until a verified pipeline exists.\n\nHealth probes and container state describe availability, not product correctness. Request rate, latency and submission throughput are not collected. Host alerts outside this scope remain in existing dashboards."
+        "content": "### Recovery readiness\nVerified backup and restore evidence must be no older than 24h. Investigate OPEN readiness or missing evidence using the backup age and scoped alerts.\n\nHealth probes and container state describe availability, not product correctness. Request rate, latency and submission throughput are not collected. Host alerts outside this scope remain in existing dashboards."
       }
     },
     {

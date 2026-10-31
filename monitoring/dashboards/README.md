@@ -13,7 +13,9 @@ preferences, collectors, rules, routes or notification settings change here.
 
 `../grafana-dashboard.json` is an exact copy of Overview, preserving the old
 bookmark and import entrypoint. Edit both copies together. Navigation preserves
-time and variables. Default is last six hours, browser timezone, 30s refresh;
+time and variables. The portable datasource variable is hidden by default for the
+one-datasource installation; the operator binds its current UID at publication.
+Default is last six hours, browser timezone, 30s refresh;
 the 24-column desktop layout uses a shallow header and spacious trend rows.
 Grafana stacks panels on smaller screens; compact readability still needs QA.
 
@@ -31,15 +33,23 @@ previous non-null healthy sample. Timelines expose 0/1 and preserve null gaps;
 Aggregate availability requires both named probes; the service count requires
 all five service observations. Missing data cannot reduce the denominator.
 Host metrics use the existing `linux` job and fixed `host="jenkins"`; custom
-metrics use the same static host. No private instance addresses are embedded.
+metrics use the same static host. The live installation must supply the static
+`host="jenkins"` scrape label on both jobs and `monitoring_scope="smokemap_hcp"`
+on scoped alert rules. These labels are required query inputs; the source example
+scrape/rules do not supply them. Preserve the installed labels when publishing;
+this change does not modify collectors, scrape configuration or rules. No private
+instance addresses are embedded.
 
-Backup readiness currently reads **OPEN** and verified age **NO EVIDENCE / OPEN**.
-There is no verified pipeline. Readiness reports evidence presence separately
-from its age: evidence older than 86400s is amber. Never create synthetic backup
-evidence. Collector age warns at 180s, queue age at 1800s, expired leases above
-zero, disk space below 15% free and inodes below 10% free. Root and data mounts
-are shown individually. CPU uses counter rate, restart history uses a 10m
-counter increase, and one-hour failures remain a rolling gauge.
+Backup readiness is **READY** only when a successful evidence read has a verified
+backup and restore timestamp aged 0–86400s. Failed reads, older evidence and future
+evidence show **OPEN**; claimed success without a timestamp remains **UNKNOWN**.
+Missing verified age reads **NO EVIDENCE / OPEN**, never a zero-age backup.
+Never create synthetic backup evidence. Collector age warns at 180s, queue age at
+1800s, expired leases above zero, disk space below 15% free and inodes below 10%
+free. Root and data mounts are shown individually. CPU uses counter rate;
+restart history uses per-service 10m counter increases, while the headline shows
+an aggregate 1h increase requiring all five services. The data-volume bytes trend
+shows shared host storage. One-hour failures remain a rolling gauge.
 
 Blocked / approval waits include blocked tasks and are blue informational values,
 not a count exclusively of human approvals. No active worker, capacity, completed
@@ -65,13 +75,18 @@ python3 -m unittest discover -s tests -p test_monitoring_dashboards.py -v
 python3 tests/test_monitoring_dashboards.py --promql > /tmp/dashboard-queries.json
 # When an existing promtool is available (also run in CI):
 promtool check rules /tmp/dashboard-queries.json
+python3 tests/test_monitoring_dashboards.py --promql-tests > /tmp/dashboard-semantics.json
+promtool test rules /tmp/dashboard-semantics.json
 ```
 
 The export replaces `$__rate_interval` with `5m`. The output is a **parse-only
 validation artifact**, not a rule file to install. Offline tests enforce JSON
 identity, navigation, native panel types, grid bounds/overlap, known metric
 coverage, gates, missing-state handling, units, counters and informational waits.
-CI uses the Prometheus parser on all exported queries. Static tests do not prove
+CI uses the Prometheus parser on all exported queries and evaluates synthetic
+backup-readiness cases against both actual dashboard expressions (fresh, 24h
+boundary, old, future, absent evidence, failed source, exporter down, stale/future
+collector and textfile errors). Fixtures contain no live metrics. Static tests do not prove
 live label cardinality, data freshness, rendering or operational behavior.
 
 ## Primary operator handoff (not executed)

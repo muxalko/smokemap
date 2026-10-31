@@ -37,6 +37,48 @@ def normalized_rules():
         for i, (_, _, t) in enumerate(targets())]}]}
 
 
+def backup_semantics():
+    """Promtool evaluates the actual cards, including vector joins and missing series."""
+    labels = 'job="smokemap-monitoring",host="jenkins",instance="fixture"'
+    source_labels = labels + ',source="backup"'
+    cases = [
+        ('fresh', 1, 89999, 1, 90000, 0, 1),
+        ('exactly_24h', 1, 3600, 1, 90000, 0, 1),
+        ('older_than_24h', 1, 3599, 1, 90000, 0, 0),
+        ('operator_regression_25h', 1, 1, 1, 90000, 0, 0),
+        ('future_evidence', 1, 90001, 1, 90000, 0, 0),
+        ('failed_source', 0, None, 1, 90000, 0, 0),
+        ('claimed_success_without_timestamp', 1, None, 1, 90000, 0, None),
+        ('missing_source', None, 89999, 1, 90000, 0, None),
+        ('exporter_down', 1, 89999, 0, 90000, 0, None),
+        ('stale_collector', 1, 89999, 1, 89819, 0, None),
+        ('future_collector', 1, 89999, 1, 90001, 0, None),
+        ('textfile_error', 1, 89999, 1, 90000, 1, None),
+    ]
+    tests = []
+    for name, success, verified, up, collector, error, expected in cases:
+        metrics = [
+            (f'up{{{labels}}}', up),
+            (f'smokemap_collector_timestamp_seconds{{{labels}}}', collector),
+            (f'node_textfile_scrape_error{{{labels}}}', error),
+            (f'smokemap_source_success{{{source_labels}}}', success),
+            (f'smokemap_backup_verified_timestamp_seconds{{{source_labels}}}', verified),
+        ]
+        tests.append({
+            'name': name, 'interval': '25h',
+            'input_series': [{'series': metric, 'values': f'{value} {value}'}
+                             for metric, value in metrics if value is not None],
+            'promql_expr_test': [
+                {'expr': next(p for p in DASHBOARDS[d]['panels']
+                              if p['title'] == 'Backup readiness')['targets'][0]['expr'],
+                 'eval_time': '25h',
+                 'exp_samples': [] if expected is None else [
+                     {'labels': '{' + source_labels + '}', 'value': expected}]}
+                for d in ('overview', 'smokemap')],
+        })
+    return {'rule_files': [], 'evaluation_interval': '25h', 'tests': tests}
+
+
 class DashboardContracts(unittest.TestCase):
     def test_identity_navigation_and_native_panels(self):
         self.assertEqual(len(set(d['uid'] for d in DASHBOARDS.values())), 3)
@@ -49,6 +91,7 @@ class DashboardContracts(unittest.TestCase):
                 self.assertEqual(d['templating']['list'][0]['name'], 'DS_PROMETHEUS')
                 self.assertEqual(d['templating']['list'][0]['type'], 'datasource')
                 self.assertEqual(d['templating']['list'][0]['query'], 'prometheus')
+                self.assertEqual(d['templating']['list'][0]['hide'], 2)
                 self.assertEqual({link['url'] for link in d['links']}, {f'/d/{uid}' for uid in FILES.values()})
                 self.assertTrue(all(link['keepTime'] and link['includeVars'] for link in d['links']))
                 self.assertTrue(13 <= len(d['panels']) <= 18)
@@ -88,7 +131,8 @@ class DashboardContracts(unittest.TestCase):
             for selector in re.findall(r'\{([^}]+)\}', q):
                 if 'job="smokemap-monitoring"' in selector or 'job="linux"' in selector:
                     self.assertIn('host="jenkins"', selector)
-        self.assertLessEqual(CUSTOM | HOST | {'ALERTS', 'up'}, seen)
+        # Inventory has no useful changing signal; do not require a padding panel.
+        self.assertLessEqual((CUSTOM - {'smokemap_source_expected'}) | HOST | {'ALERTS', 'up'}, seen)
 
     def test_freshness_and_missing_data_contract(self):
         for _, p, t in targets():
@@ -126,7 +170,7 @@ class DashboardContracts(unittest.TestCase):
                 self.assertEqual(p['fieldConfig']['defaults']['unit'], 'percent')
             if 'smokemap_container_restarts_total' in q:
                 self.assertIn('increase(', q)
-                self.assertIn('[10m]', q)
+                self.assertIn('[1h]' if p['title'] == 'Restarts · 1h' else '[10m]', q)
             if 'smokemap_hcp_failures_last_hour' in q:
                 self.assertNotIn('increase(', q)
                 self.assertNotIn('rate(', q)
@@ -147,12 +191,40 @@ class DashboardContracts(unittest.TestCase):
         for name in ('overview', 'smokemap'):
             readiness = next(p for p in DASHBOARDS[name]['panels'] if p['title'] == 'Backup readiness')
             self.assertEqual(readiness['fieldConfig']['defaults']['mappings'][0]['options']['0'], {'text': 'OPEN', 'color': 'orange'})
+            q = readiness['targets'][0]['expr']
+            for fragment in ('smokemap_backup_verified_timestamp_seconds', '<= bool 86400',
+                             '>= bool 0', 'on(job,instance,source)', '== 0', '== 1'):
+                self.assertIn(fragment, q)
+            self.assertEqual(readiness['fieldConfig']['defaults']['mappings'][0]['options']['1'],
+                             {'text': 'READY', 'color': 'green'})
         age = next(p for p in DASHBOARDS['smokemap']['panels'] if p['title'] == 'Verified backup age')
         self.assertEqual(age['fieldConfig']['defaults']['noValue'], 'NO EVIDENCE / OPEN')
         self.assertIn({'color': 'orange', 'value': 86400}, age['fieldConfig']['defaults']['thresholds']['steps'])
         for name, title, threshold in [('overview', 'Disk space free', 15), ('overview', 'Inodes free', 10), ('hcp', 'Oldest queued task', 1800)]:
             p = next(p for p in DASHBOARDS[name]['panels'] if p['title'] == title)
             self.assertIn(threshold, [s['value'] for s in p['fieldConfig']['defaults']['thresholds']['steps']])
+
+    def test_review_regressions(self):
+        p = next(p for p in DASHBOARDS['overview']['panels'] if p['title'] == 'Healthy services / 5')
+        self.assertEqual(p['fieldConfig']['defaults']['thresholds']['steps'],
+                         [{'color': 'red', 'value': None}, {'color': 'green', 'value': 5}])
+        p = next(p for p in DASHBOARDS['smokemap']['panels'] if p['title'] == 'Restarts · 1h')
+        self.assertIn('== 5', p['targets'][0]['expr'])
+        p = next(p for p in DASHBOARDS['smokemap']['panels'] if p['title'] == 'Host data volume · free space')
+        self.assertEqual(p['fieldConfig']['defaults']['unit'], 'bytes')
+        self.assertIn('mountpoint="/data"', p['targets'][0]['expr'])
+        stats = [p['description'] for p in DASHBOARDS['hcp']['panels'] if p['type'] == 'stat']
+        self.assertEqual(len(stats), len(set(stats)))
+        payload = json.dumps(DASHBOARDS)
+        for obsolete in ('Backup evidence remains OPEN', 'No verified backup pipeline is currently available'):
+            self.assertNotIn(obsolete, payload)
+
+    def test_semantic_fixtures_cover_both_actual_cards(self):
+        tests = backup_semantics()['tests']
+        self.assertEqual(len(tests), 12)
+        self.assertTrue(all(len(t['promql_expr_test']) == 2 for t in tests))
+        stale = next(t for t in tests if t['name'] == 'operator_regression_25h')
+        self.assertTrue(all(t['exp_samples'][0]['value'] == 0 for t in stale['promql_expr_test']))
 
     def test_normalized_validation_export_covers_every_target(self):
         rules = normalized_rules()['groups'][0]['rules']
@@ -164,5 +236,7 @@ class DashboardContracts(unittest.TestCase):
 if __name__ == '__main__':
     if sys.argv[1:] == ['--promql']:
         print(json.dumps(normalized_rules(), indent=2))
+    elif sys.argv[1:] == ['--promql-tests']:
+        print(json.dumps(backup_semantics(), indent=2))
     else:
         unittest.main()

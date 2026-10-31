@@ -47,11 +47,12 @@
     "list": [
       {
         "name": "DS_PROMETHEUS",
-        "label": "Prometheus",
+        "label": "Data source",
         "type": "datasource",
         "query": "prometheus",
         "refresh": 1,
-        "options": []
+        "options": [],
+        "hide": 2
       }
     ]
   },
@@ -83,7 +84,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful health read, gated by live exporter and collector freshness.",
+      "description": "API health probe: successful response is healthy. Live exporter and fresh collector required.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -173,7 +174,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful health read, gated by live exporter and collector freshness.",
+      "description": "Runtime compatibility and running-state check. Live exporter and fresh collector required.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -263,7 +264,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "description": "Number of queued or pending tasks in the latest successful queue snapshot; informational backlog count.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -336,7 +337,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "description": "Age in seconds of the oldest queued or pending task. Queue-age warning threshold is 1800s; successful queue read required.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -413,7 +414,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "description": "Running tasks whose assigned lease expired more than 120s ago. Any expired lease needs action; successful queue read required.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",
@@ -490,7 +491,7 @@
         "w": 4,
         "h": 4
       },
-      "description": "Successful queue read required. Lease expiry includes 120s grace; failures are a rolling one-hour gauge.",
+      "description": "Failed or error tasks updated in the last hour. Rolling snapshot gauge, not a counter; any failure needs action. Successful queue read required.",
       "pluginVersion": "11.3.1",
       "datasource": {
         "type": "prometheus",

@@ -24,6 +24,8 @@ jobs:
           sudo apt-get install -y prometheus
           python3 tests/test_monitoring_dashboards.py --promql > "$RUNNER_TEMP/dashboard-queries.json"
           promtool check rules "$RUNNER_TEMP/dashboard-queries.json"
+          python3 tests/test_monitoring_dashboards.py --promql-tests > "$RUNNER_TEMP/dashboard-semantics.json"
+          promtool test rules "$RUNNER_TEMP/dashboard-semantics.json"
           promtool check rules monitoring/prometheus/rules.yml
           promtool test rules monitoring/prometheus/rules.test.yml
       - run: make test-dev-cleanup
