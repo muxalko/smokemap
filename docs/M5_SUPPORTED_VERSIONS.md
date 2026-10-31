@@ -10,6 +10,36 @@ Scope: Node.js, Next.js, Python, Django, PostgreSQL, and PostGIS only. This
 document selects targets and an upgrade order; it does not perform an upgrade
 or change a manifest, lockfile, image, workflow, deployment, or database.
 
+## 31 October assessment and launch interpretation
+
+The original entry inventory and source review below are historical evidence,
+not the current integration or runtime inventory. The
+[current assessment](M5_SECURITY_ASSESSMENT_20261031.md) records root
+`215bd7a5c3b000d605600ed33710a0285f619c40`, frontend
+`a07af381b870e16229c36cee491a6cb8c0859d38` (Next.js 15.5.28, Node 22.23.4,
+Yarn 1.22.22 and a digest-pinned Node base), and backend
+`05098a798961e6e1b968d78f3211a17df63d036f` (Django 4.2.22 on floating Python
+3.12). Backend manifest authority and frontend package-manager policy have
+already been consolidated; Pipenv is retired. Backend transitives are still
+not fully locked. Actual running sources/images could not be verified.
+
+The 30 October decision is now recorded in [Production launch gates](PRODUCTION_LAUNCH_GATES.md).
+The six target lines below remain M5 modernization destinations. A patched,
+compatible, supported bridge may launch before runtime modernization, provided
+all mandatory gates pass. Unsupported Django is a launch blocker regardless
+of other deferrals. Next.js 15 currently has an upstream security-support
+extension through 2027-01-31; fresh patch/security verification and a timed
+upgrade are required. These are dated support observations, not a clean-scan
+or future-launch guarantee. See the assessment for official sources and
+incomplete scan evidence.
+
+For launch sequencing, use the assessment's prioritized acceptance plan and
+sequential gates. The original seven-step modernization sequence below is
+retained for full M5 planning; it must not make Node/Python target upgrades or
+the PostGIS minor upgrade unconditional launch prerequisites. Its old 13→14→15
+and manifest-consolidation work must be reconciled with the current committed
+baseline rather than repeated. No deployment or migration is authorized here.
+
 ## Decision
 
 Smokemap will converge on these production-supported version lines:

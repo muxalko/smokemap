@@ -2,7 +2,7 @@
 
 Status: Active planning document
 
-Last updated: 2026-10-26 (client decision date)
+Last updated: 2026-10-31 (30 October launch decision synchronization)
 
 Per-task M5 development gate (client decision, 2026-10-26): complete one task
 at a time, review its exact revision, deploy that reviewed release to
@@ -388,6 +388,38 @@ client depends on them.
 
 ## 8. Current milestone — M5 production readiness
 
+### Minimum safe launch decision — 30 October 2026
+
+The approved decision separates mandatory production launch safety from
+conditional post-launch modernization. [Production launch gates](PRODUCTION_LAUNCH_GATES.md)
+is the repository contract: all eight mandatory gates remain required,
+including supported/patched frameworks, complete dependency/image assessment,
+production operations, recovery, release control, external monitoring,
+exact-candidate product/load acceptance, launch-data/ownership decisions and
+an explicit final deployment decision. Quick Tunnels remain staging tools.
+
+The [31 October security assessment](M5_SECURITY_ASSESSMENT_20261031.md)
+inventories exact committed pins separately from unavailable running-source/
+image evidence. Django 4.2.22 remains unsupported; six completed direct-package advisory
+queries identify 56 records, including critical Pillow and PyJWT matches.
+These remain unaccepted findings; resolved graphs, running identities and
+image/native scans plus durable private evidence archival are incomplete. No launch
+clearance follows. Complete the assessment/security remediation before launch.
+
+Node/Python modernization beyond supported bridge runtimes, PostGIS minor
+modernization, excluded legacy-data migration, safe GraphQL/duplicate-path retirement, broad API consolidation,
+Tailwind cleanup, advanced observability and HA may follow launch only under
+the explicit conditions in the launch-gate table. Deferral retains tracked
+work. The full M5 ordered work and exit criteria below remain required for an
+M5 completion claim; minimum safe launch does not complete M5.
+
+Independent planning lanes do not permit concurrent implementation/service
+changes. Exact-head review and required CI precede merge; reviewed root
+integration and the separately authorized DEVELOPMENT deployment plus feature/
+authentication/regression gate precede the next task. Exact-candidate staging
+and explicit production decision remain separate later gates. This assessment
+PR does not merge or deploy.
+
 ### Entry criteria
 
 - M1 through M4 have demonstrated their exit criteria.
@@ -458,3 +490,4 @@ No remaining item in this hygiene list delays the M1 security blockers.
 | 2026-10-07 | M4 | Done | All ordered work and exit criteria demonstrated in `M4_EXIT_EVIDENCE.md` at root `ac86d7a`, backend `d9ddb01`, and frontend `d466268`; final audit `302a3f86d1864c0e941133e24b918e23` returned `READY_TO_CLOSE_M4` |
 | 2026-10-07 | M5 | Set to Current | M4 exit gate demonstrated; production-readiness work may begin |
 | 2026-10-08 | M5 supported versions | Baseline documented | `M5_SUPPORTED_VERSIONS.md`; root issue `#106`; targets Node.js 24, Next.js 16, Python 3.14, Django 5.2 LTS, PostgreSQL 17, and PostGIS 3.6 without performing upgrades |
+| 2026-10-31 | Minimum safe launch / M5 | Decision synchronized; assessment incomplete | `PRODUCTION_LAUNCH_GATES.md`; `M5_SECURITY_ASSESSMENT_20261031.md`; root #134; no upgrades, deployment or launch clearance |
