@@ -231,12 +231,12 @@ class DashboardContracts(unittest.TestCase):
         age = next(p for p in DASHBOARDS['smokemap']['panels'] if p['title'] == 'Verified backup age')
         self.assertEqual(age['fieldConfig']['defaults']['noValue'], 'NO EVIDENCE / OPEN')
         self.assertIn({'color': 'orange', 'value': 86400}, age['fieldConfig']['defaults']['thresholds']['steps'])
-        for name, title, threshold in [('overview', 'Disk space free', 15), ('overview', 'Inodes free', 10), ('hcp', 'Oldest queued task', 1800)]:
+        for name, title, threshold in [('overview', 'Disk space free', 15), ('overview', 'Inodes free', 10), ('hcp', 'Oldest queued', 1800)]:
             p = next(p for p in DASHBOARDS[name]['panels'] if p['title'] == title)
             self.assertIn(threshold, [s['value'] for s in p['fieldConfig']['defaults']['thresholds']['steps']])
 
     def test_review_regressions(self):
-        p = next(p for p in DASHBOARDS['overview']['panels'] if p['title'] == 'Healthy services / 5')
+        p = next(p for p in DASHBOARDS['overview']['panels'] if p['title'] == 'Services / 5')
         self.assertEqual(p['fieldConfig']['defaults']['thresholds']['steps'],
                          [{'color': 'red', 'value': None}, {'color': 'green', 'value': 5}])
         p = next(p for p in DASHBOARDS['smokemap']['panels'] if p['title'] == 'Restarts · 1h')

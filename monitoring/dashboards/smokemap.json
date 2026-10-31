@@ -71,7 +71,7 @@
       "pluginVersion": "11.3.1",
       "options": {
         "mode": "markdown",
-        "content": "## Operations / Smokemap\nDevelopment environment availability and recovery readiness. **Check backup readiness and verified age.** Container state does not prove submission or authorization workflows."
+        "content": "## Operations / Smokemap\nDevelopment service health, storage and recovery readiness."
       }
     },
     {
@@ -660,7 +660,7 @@
           "unit": "short",
           "noValue": "UNKNOWN",
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "thresholds": {
             "mode": "absolute",
@@ -680,7 +680,7 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "FAILED",
+                  "text": "UNHEALTHY",
                   "color": "red"
                 },
                 "1": {
@@ -820,7 +820,9 @@
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
-            }
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 1
           }
         },
         "overrides": []
@@ -934,7 +936,9 @@
             "axisBorderShow": false,
             "thresholdsStyle": {
               "mode": "off"
-            }
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 1
           }
         },
         "overrides": []
@@ -1323,7 +1327,8 @@
             "thresholdsStyle": {
               "mode": "off"
             }
-          }
+          },
+          "decimals": 2
         },
         "overrides": []
       },
