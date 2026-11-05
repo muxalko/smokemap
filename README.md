@@ -21,6 +21,13 @@ For an existing clone, use `make sync` to restore the revisions recorded by the 
 
 Application changes follow their own issue, branch and pull-request workflow. After an application PR is merged and verified, update the corresponding submodule pointer in a separate root pull request.
 
+The development frontend has a 6 GiB container RAM ceiling and a separate
+4096 MiB Node old-space ceiling. Its bounded static-asset health probe measures
+HTTP liveness; homepage compilation and product readiness remain separate gates.
+See [memory diagnosis and guardrails](docs/DEV_FRONTEND_MEMORY.md) for overrides,
+evidence limits and safe follow-up verification. These source defaults do not
+change an already running frozen release.
+
 Pull requests and pushes to `development` initialize the pinned submodules,
 validate the Docker Compose configuration and media wiring, and scan the full
 workspace history with Gitleaks. Secret-scan findings are redacted from CI
@@ -71,6 +78,11 @@ variability. The internal Compose network and browser request guard reject
 external traffic. The target removes the fixtures and test containers whether
 the browser passes or fails; the isolated named volumes are preserved for
 faster subsequent runs.
+
+All three browser E2E targets first request and fully consume the development
+homepage once, with a bounded startup deadline, before Chromium starts. This
+explicitly compiles the page separately from static Compose liveness and the
+browser interaction budgets. Startup failures fail the target.
 
 ## Cross-application submission and media test
 

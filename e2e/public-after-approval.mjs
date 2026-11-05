@@ -287,7 +287,17 @@ async function runCreate(browser) {
       void request.abort("blockedbyclient");
     }
   });
-  await signIn(page, ownerEmail, "/");
+  // A server-rendered '+' is visible before React attaches its click handler.
+  // The real initial viewport request comes from the mounted map lifecycle.
+  await Promise.all([
+    page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.origin === new URL(baseUrl).origin &&
+        url.pathname === "/api/smokemap/locations" &&
+        url.searchParams.has("bbox") && response.status() === 200;
+    }, { timeout: 30_000 }),
+    signIn(page, ownerEmail, "/"),
+  ]);
   assert.equal(await page.evaluate(() => window.isSecureContext), true, "submission origin is not secure");
   await page.waitForFunction(() => Array.from(document.querySelectorAll("button")).some((button) => button.textContent?.trim() === "+"), { timeout: 30_000 });
   const images = writeFixtureImages();

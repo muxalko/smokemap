@@ -165,9 +165,12 @@ services:
       context: ./smokemap-webapp
       target: development
     init: true
+    # RAM for the whole container; Node old-space is a separate per-process cap.
+    mem_limit: ${FRONTEND_MEMORY_LIMIT:-6g}
     command: yarn dev --hostname 0.0.0.0 --port 3000
     environment:
       NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=${FRONTEND_NODE_MAX_OLD_SPACE_SIZE_MB:-4096}
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_ENVIRONMENT: local
       NEXT_PUBLIC_VERSION: development
@@ -198,11 +201,12 @@ services:
         - CMD
         - node
         - -e
-        - fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
-      interval: 5s
+        # Static asset liveness avoids rendering/compiling the map every probe.
+        - fetch('http://127.0.0.1:3000/favicon.ico', {method:'HEAD', redirect:'manual', signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))
+      interval: 30s
       timeout: 5s
-      retries: 20
-      start_period: 30s
+      retries: 4
+      start_period: 60s
     restart: unless-stopped
 
 volumes:

@@ -34,7 +34,7 @@ services:
   e2e:
     image: ghcr.io/puppeteer/puppeteer:24.16.0
     init: true
-    entrypoint: ["node"]
+    entrypoint: ["node", "e2e/start.mjs"]
     command: ["e2e/viewport-pan.mjs"]
     environment:
       E2E_BASE_URL: http://frontend:3000

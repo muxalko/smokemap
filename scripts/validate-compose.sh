@@ -21,6 +21,8 @@ MEDIA_CLEANUP_BATCH_SIZE= \
 MEDIA_CLEANUP_INTERVAL_SECONDS= \
 MEDIA_CLEANUP_TIMEOUT_SECONDS= \
 MEDIA_CLEANUP_HEALTH_START_PERIOD= \
+FRONTEND_MEMORY_LIMIT= \
+FRONTEND_NODE_MAX_OLD_SPACE_SIZE_MB= \
   docker compose config --format json >"$default_compose_config_file"
 
 POSTGRES_PASSWORD=validation-password \
@@ -35,6 +37,8 @@ MEDIA_CLEANUP_BATCH_SIZE=17 \
 MEDIA_CLEANUP_INTERVAL_SECONDS=29 \
 MEDIA_CLEANUP_TIMEOUT_SECONDS=37 \
 MEDIA_CLEANUP_HEALTH_START_PERIOD=84s \
+FRONTEND_MEMORY_LIMIT=5g \
+FRONTEND_NODE_MAX_OLD_SPACE_SIZE_MB=3072 \
   docker compose config --format json >"$compose_config_file"
 
 require_literal() {
@@ -217,8 +221,23 @@ def validate(path, start_period, expected_config):
 try:
     validate(sys.argv[1], "1m24s", ("17", "29", "37"))
     validate(sys.argv[2], "4m10s", ("100", "300", "120"))
+    for path, memory, heap in ((sys.argv[1], 5 * 1024**3, "3072"),
+                               (sys.argv[2], 6 * 1024**3, "4096")):
+        with open(path) as stream:
+            services = json.load(stream)["services"]
+        frontend = services["frontend"]
+        assert int(frontend["mem_limit"]) == memory
+        assert frontend["environment"]["NODE_OPTIONS"] == "--max-old-space-size=" + heap
+        assert frontend["healthcheck"]["interval"] == "30s"
+        assert frontend["healthcheck"]["timeout"] == "5s"
+        assert frontend["healthcheck"]["retries"] == 4
+        assert frontend["healthcheck"]["start_period"] == "1m0s"
+        for name, service in services.items():
+            if name != "frontend":
+                assert "NODE_OPTIONS" not in service.get("environment", {})
+                assert "mem_limit" not in service
 except (AssertionError, KeyError, TypeError, ValueError, StopIteration):
-    sys.exit("Compose validation failed: development cleanup contract")
+    sys.exit("Compose validation failed: development service contracts")
 PYTHON
 
 echo "Compose media storage and cleanup wiring is valid."
