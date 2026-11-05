@@ -21,6 +21,7 @@ jobs:
         with:
           node-version-file: smokemap-webapp/.nvmrc
       - run: python3 -m unittest discover -s tests -p 'test_dev_frontend_memory.py' -v
+      - run: node --test tests/e2e-frontend-readiness.test.mjs
       - run: python3 -m unittest discover -s tests -p 'test_monitoring*.py'
       - name: Validate monitoring rules and dashboard PromQL
         run: |

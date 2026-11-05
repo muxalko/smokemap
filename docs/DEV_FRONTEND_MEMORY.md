@@ -79,6 +79,39 @@ isolated E2E projects use the same guardrails; staging overlays have independent
 contracts. The static request avoids repeatedly warming the map merely to
 measure liveness.
 
+## E2E startup readiness repair
+
+Original candidate `d06abcdfab38a07019595040a5b67e1d43d6f5be`, CI run
+`41926302715`, passed integration, secrets and submission-media but failed
+viewport-pan (30-second Puppeteer timeout) and public-after-approval
+(`waitForVisibleText` in `fillSubmission`, lines 150/190, five-second timeout).
+The existing HCP report `8055827cdee24b738fa150a2bc36b702` records these
+unresolved failures; it supplies no independent review or live verification.
+
+Source inspection confirms that replacing the homepage health GET with static
+liveness removed the only pre-browser homepage compilation. The viewport
+test starts its first response/navigation clocks before that cold compilation;
+the public-media test previously treated a visible server-rendered submission
+button as interactive readiness. These are startup synchronization gaps,
+consistent with the supplied failed-job evidence. Docker and redirected full
+CI logs remain inaccessible in this sandbox; no compiler-duration measurement
+or verified live memory cause is inferred from the failures.
+
+The isolated E2E entrypoint now requests the homepage once, requires HTTP 200
+without redirects, and consumes the complete streamed body before importing
+the browser suite. Cold development compilation has a separate bounded
+two-minute startup deadline; request, body, status and deadline failures abort
+the suite. There are no retry loops or periodic rendered-page probes. The
+public-media creation phase also waits for the real successful initial bbox
+response from the mounted map before interacting with the submission button.
+Existing navigation, response and interaction budgets and all product/storage
+assertions remain intact. The canonical static liveness probe is unchanged.
+
+`node --test tests/e2e-frontend-readiness.test.mjs` covers streamed-body
+completion, non-200 responses, request/body failures and a hung body deadline
+without application dependencies or network access. All three real browser
+suites still run in CI; their results must be attached to the repaired head.
+
 References: [Compose memory limits and healthcheck](https://docs.docker.com/reference/compose-file/services/),
 [Node old-space limit](https://nodejs.org/docs/latest-v22.x/api/cli.html#--max-old-space-sizesize-in-mib).
 

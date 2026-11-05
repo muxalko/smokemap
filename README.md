@@ -79,6 +79,11 @@ external traffic. The target removes the fixtures and test containers whether
 the browser passes or fails; the isolated named volumes are preserved for
 faster subsequent runs.
 
+All three browser E2E targets first request and fully consume the development
+homepage once, with a bounded startup deadline, before Chromium starts. This
+explicitly compiles the page separately from static Compose liveness and the
+browser interaction budgets. Startup failures fail the target.
+
 ## Cross-application submission and media test
 
 Run the M3 browser submission and media test from the workspace root:
