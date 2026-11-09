@@ -482,6 +482,11 @@ namespace Smokemap.BackupPrototype
             return full;
         }
 
+        public static IDisposable HoldPrivateDirectory(string path)
+        {
+            return PinPrivateDirectory(LocalPath(path));
+        }
+
         internal static IDisposable PinPrivateDirectory(string full)
         {
             var pins = new DirectoryPins(full);
