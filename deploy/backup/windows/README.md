@@ -62,3 +62,29 @@ and test keys. Independent review is still required before operational use.
 Do not generate operational keys or run this against application backups until
 the independent source review and capture/transfer/restore plan pass. Never log
 private-key bytes, raw database/media archives or application secrets.
+
+## Paired export receiver
+
+`Receive-SmokemapBackup.ps1` pulls an already completed export over the
+noninteractive, host-key-verified SSH connection to Jenkins. The Jenkins owner
+must publish `manifest.json`, `database.dump`, and `media.tar` under
+`~/.local/state/smokemap-offvm-export/<run-id>/`. The manifest has
+`schema: 1`, `run_id`, `environment`, and a `files` array in database/media
+order. Each entry has `name`, `bytes`, and a lowercase SHA-256 `sha256`.
+The publisher must expose the run only after writing the complete pair.
+
+Supply existing owner/SYSTEM-only backup and receipt roots in separate
+directories and the matching public and private recipient key paths. The
+receiver checks file limits, lengths, and digests before encrypting and
+verifying all three files. Readers require the separate root receipt, which
+publishes last and holds the expected plaintext identity, length, and digest
+of the encrypted manifest. If that final publication fails, preserve the
+encrypted orphan for operator reconciliation. Run IDs are never overwritten.
+
+`tests/Test-BackupReceiver.ps1 -RunId fixture-<12 hex digits>` uses disposable
+Windows keys and directories. Prepare two synthetic Jenkins exports with
+environment `fixture`: the named run with a valid manifest and the same run
+with a `-bad` suffix and a deliberately incorrect media digest. The test
+verifies transfer and decryption of the pair, corruption rejection, and
+duplicate-run rejection. The receiver itself provides no capture scheduler,
+retention, alerts, or application-level restore.
